@@ -1,4 +1,4 @@
-from .config_models import ConfigModel, LevelModel
+from .config_models import Config, LevelModel
 
 
-__all__ = ["ConfigModel", "LevelModel"]
+__all__ = ["Config", "LevelModel"]

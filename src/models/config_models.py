@@ -40,7 +40,7 @@ _DEFAULT_LEVEL = [
 ]
 
 
-class ConfigModel(BaseModel):
+class Config(BaseModel):
     highscore_filename: str = _DEFAULT_HIGHSCORE_FILENAME
     lives: int = _DEFAULT_LIVES
     pacgum: int
@@ -52,7 +52,7 @@ class ConfigModel(BaseModel):
     level: List[LevelModel] = _DEFAULT_LEVEL
 
     @model_validator(mode="after")
-    def set_pacgum_invalid(self) -> ConfigModel:
+    def set_pacgum_invalid(self) -> Config:
         smallest_map = min(self.level, key=lambda lvl: lvl.width * lvl.height)
         smallest_map_size = smallest_map.height * smallest_map.width
 

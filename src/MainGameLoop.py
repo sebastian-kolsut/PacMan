@@ -10,8 +10,8 @@ class MainGameLoop:
         m = Mlx()
 
         mlx_ptr = m.mlx_init()
-        win_size = m.mlx_get_screen_size(mlx_ptr)[1:]
-        win_ptr = m.mlx_new_window(mlx_ptr, win_size[0], win_size[1], "PacMan")
+        win_width, win_height = m.mlx_get_screen_size(mlx_ptr)[1:]
+        win_ptr = m.mlx_new_window(mlx_ptr, win_width, win_height, "PacMan")
 
         self._mlx = MlxContext(
             m=m,
