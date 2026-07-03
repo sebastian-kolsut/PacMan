@@ -25,14 +25,12 @@ class Parser:
                 "InvalidFileSufixError: Config file must be '.json' "
                 )
         with open(config_file, "r") as file:
-            json_content = self.strip_comments(file)
-
-        print(json_content)
+            json_content = self._strip_comments(file)
 
         return ConfigModel.model_validate_json(json_content)
 
     @staticmethod
-    def strip_comments(file: TextIO) -> str:
+    def _strip_comments(file: TextIO) -> str:
         json_string = ""
 
         for line in file.readlines():
