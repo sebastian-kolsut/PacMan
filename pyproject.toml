@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "db>=0.1.1",
+    "mazegenerator",
+    "mlx",
     "pydantic>=2.13.4",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
@@ -13,3 +15,7 @@ dependencies = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.uv.sources]
+mazegenerator = { path = "wheels/mazegenerator-2.0.2-py3-none-any.whl" }
+mlx = { path = "wheels/mlx-2.2-py3-none-any.whl" }
