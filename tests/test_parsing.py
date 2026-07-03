@@ -1,6 +1,6 @@
 from src.Parser import Parser
 from src.models import ConfigModel, LevelModel
-from src.errors import InvalidFileFormatError
+from src.errors import InvalidFileSufixError
 from pydantic import ValidationError
 import pytest
 
@@ -66,7 +66,7 @@ def test_parsing_file_not_found() -> None:
 
 
 def test_parsing_invalid_file_format() -> None:
-    with pytest.raises(InvalidFileFormatError):
+    with pytest.raises(InvalidFileSufixError):
         Parser().parse("tests/jsons/invalid_file_sufix.jon")
 
 
