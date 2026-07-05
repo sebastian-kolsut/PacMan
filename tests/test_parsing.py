@@ -13,7 +13,7 @@ _VALID_CONFIG = Config(
         points_per_ghost=200,
         seed=42,
         level_max_time=90,
-        level=[
+        levels=[
             LevelModel(width=20, height=20),
             LevelModel(width=25, height=25),
             LevelModel(width=30, height=15)

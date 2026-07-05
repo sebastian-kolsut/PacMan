@@ -26,14 +26,5 @@ class MlxContext:
     mlx_ptr: int
     win_ptr: int
 
-
-@dataclass
-class MazeBitmaps:
-
-    maze_width: int
-    maze_height: int
-
-    north_walls: int
-    east_walls: int
-    south_walls: int
-    west_walls: int
+    win_width: int
+    win_height: int

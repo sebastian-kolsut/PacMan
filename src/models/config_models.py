@@ -35,7 +35,7 @@ class LevelModel(BaseModel):
         return value
 
 
-_DEFAULT_LEVEL = [
+_DEFAULT_LEVELS = [
     LevelModel(width=10 + i * 5, height=10 + i * 5) for i in range(10)
 ]
 
@@ -49,11 +49,11 @@ class Config(BaseModel):
     points_per_ghost: int = _DEFAULT_POINTS_PER_GHOST
     seed: int = _DEFAULT_SEED
     level_max_time: int = _DEFAULT_LEVEL_MAX_TIME
-    level: List[LevelModel] = _DEFAULT_LEVEL
+    levels: List[LevelModel] = _DEFAULT_LEVELS
 
     @model_validator(mode="after")
     def set_pacgum_invalid(self) -> Config:
-        smallest_map = min(self.level, key=lambda lvl: lvl.width * lvl.height)
+        smallest_map = min(self.levels, key=lambda lvl: lvl.width * lvl.height)
         smallest_map_size = smallest_map.height * smallest_map.width
 
         if self.pacgum > smallest_map_size or self.pacgum <= 0:
@@ -120,12 +120,12 @@ class Config(BaseModel):
             return _DEFAULT_LEVEL_MAX_TIME
         return value
 
-    @field_validator("level", mode="before")
+    @field_validator("levels", mode="before")
     def set_level_if_invalid(
             cls, value: List[Dict[str, int]]
             ) -> List[LevelModel] | List[Dict[str, int]]:
         if not isinstance(value, list) or not value:
             print("Error: Invalid level_max_time - " +
                   "clamped to safe default for levels")
-            return _DEFAULT_LEVEL
+            return _DEFAULT_LEVELS
         return value
