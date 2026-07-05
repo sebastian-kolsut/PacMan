@@ -1,6 +1,7 @@
 from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.models import Config
 from dataclasses import dataclass
+from typing import Set
 
 
 _UP = 0
@@ -24,11 +25,12 @@ class Maze:
         self.bitboard = Bitboard()
 
         self.generate_new_maze()
+        self.patters_positions = self._load_42_patern_positions()
 
     def generate_new_maze(self):
         self.width = self.config.levels[self.level].width
         self.height = self.config.levels[self.level].height
-        mazegen = MazeGenerator((self.width, self.height), perfect=True)
+        mazegen = MazeGenerator((self.width, self.height))
 
         self._reset_bitboard()
 
@@ -47,6 +49,16 @@ class Maze:
 
     def is_wall_left(self, bit_idx: int) -> bool:
         return (self.bitboard.left & (1 << bit_idx)) != 0
+
+    def _load_42_patern_positions(self) -> Set[int]:
+        positions: Set[int] = set()
+        
+        for idx in range(self.width * self.height):
+            if self.is_wall_up(idx) and self.is_wall_right(idx) \
+                    and self.is_wall_down(idx) and self.is_wall_left(idx):
+                positions.add(idx)
+        
+        return positions
 
     def _set_cell_value(self, x: int, y: int, mazegen: MazeGenerator,
                         width: int) -> None:

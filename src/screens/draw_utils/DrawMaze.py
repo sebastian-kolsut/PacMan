@@ -13,8 +13,8 @@ _DOWN = 4
 _LEFT = 8
 
 _MAZE_WIDTH_SCALE = 0.7
-_SCREEN_MARGIN = (1 - _MAZE_WIDTH_SCALE) / 2
 
+_PATTERN_CELL = 0b1111
 
 class DrawMaze:
 
@@ -65,8 +65,31 @@ class DrawMaze:
         if self._maze.is_wall_left(bit_idx):
             mask |= _LEFT
 
+        if mask == _PATTERN_CELL:
+            mask = self._get_pattern_mask(bit_idx)
+            
+
         self.fb.draw_blended_tile(pixels, self._walls[mask],
                                   y * self._cell_size, x * self._cell_size)
+    
+    def _get_pattern_mask(self, idx: int) -> NDArray[np.uint8]:
+        mask = _PATTERN_CELL
+
+        up = idx - self._maze.width in self._maze.patters_positions
+        right = idx + 1 in self._maze.patters_positions
+        down = idx + self._maze.width in self._maze.patters_positions
+        left = idx - 1 in self._maze.patters_positions
+        
+        if up:
+            mask &= ~_UP
+        if right:
+            mask &= ~_RIGHT
+        if down:
+            mask &= ~_DOWN
+        if left:
+            mask &= ~_LEFT
+        
+        return mask
 
     def _get_maze_size_pixels(
             self, mlx_ctx: MlxContext
