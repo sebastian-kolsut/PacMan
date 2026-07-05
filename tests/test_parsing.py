@@ -1,10 +1,10 @@
 from src.Parser import Parser
-from src.models import ConfigModel, LevelModel
+from src.models import Config, LevelModel
 from src.errors import InvalidFileSufixError
 from pydantic import ValidationError
 import pytest
 
-_VALID_CONFIG = ConfigModel(
+_VALID_CONFIG = Config(
         highscore_filename="highscores.txt",
         lives=3,
         pacgum=42,
@@ -13,14 +13,14 @@ _VALID_CONFIG = ConfigModel(
         points_per_ghost=200,
         seed=42,
         level_max_time=90,
-        level=[
+        levels=[
             LevelModel(width=20, height=20),
             LevelModel(width=25, height=25),
             LevelModel(width=30, height=15)
         ]
         )
 
-_VALID_CONFIG_DEFAULT = ConfigModel(pacgum=42)
+_VALID_CONFIG_DEFAULT = Config(pacgum=42)
 
 
 def test_parsing_valid_config() -> None:

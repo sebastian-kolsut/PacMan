@@ -1,11 +1,11 @@
-from src.models import ConfigModel
+from src.models import Config
 from src.errors import InvalidFileSufixError
 from typing import TextIO
 
 
 class Parser:
 
-    def parse(self, config_file: str) -> ConfigModel:
+    def parse(self, config_file: str) -> Config:
         """Parse and validate a config file into a ConfigModel.
 
         Args:
@@ -27,7 +27,7 @@ class Parser:
         with open(config_file, "r") as file:
             json_content = self._strip_comments(file)
 
-        return ConfigModel.model_validate_json(json_content)
+        return Config.model_validate_json(json_content)
 
     @staticmethod
     def _strip_comments(file: TextIO) -> str:

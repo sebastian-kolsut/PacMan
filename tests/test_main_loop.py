@@ -1,5 +1,5 @@
 from src.MainGameLoop import MainGameLoop
-from src.dataclasses import Screen
+from src.models.dataclasses import Screen
 
 
 def test_main_menu_on_start() -> None:

@@ -6,7 +6,7 @@
   "points_per_super_pacgum": 50,
   "seed": 42,
   "level_max_time": 180,
-  "level": [
+  "levels": [
     { "width": 10, "height": 10 },
     { "width": 15, "height": 15 },
     { "width": 20, "height": 20 },

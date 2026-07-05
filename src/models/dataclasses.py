@@ -5,6 +5,7 @@ import time
 
 
 class Screen(Enum):
+
     MAIN_MENU = auto()
     GAME_PLAYING = auto()
     WIN_OR_LOSE = auto()
@@ -12,6 +13,7 @@ class Screen(Enum):
 
 @dataclass
 class GameState:
+
     screen: Screen = Screen.MAIN_MENU
     last_frame_time: float = field(default_factory=time.time)
     frame_interval: float = 1 / 60
@@ -19,6 +21,10 @@ class GameState:
 
 @dataclass
 class MlxContext:
+
     m: Mlx
     mlx_ptr: int
     win_ptr: int
+
+    win_width: int
+    win_height: int
