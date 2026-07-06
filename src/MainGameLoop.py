@@ -46,8 +46,8 @@ class MainGameLoop:
         mlx_ptr = m.mlx_init()
         _, screen_width, screen_height = m.mlx_get_screen_size(mlx_ptr)
 
-        win_width = min(2280, int(screen_width * 0.85))
-        win_height = min(1900, int(screen_height * 0.85))
+        win_width = min(2280, int(screen_width))
+        win_height = min(1900, int(screen_height * 0.93))
 
         win_ptr = m.mlx_new_window(mlx_ptr, win_width, win_height, "PacMan")
 

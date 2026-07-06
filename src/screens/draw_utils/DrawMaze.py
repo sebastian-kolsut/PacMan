@@ -20,11 +20,11 @@ class DrawMaze:
 
     def __init__(self, mlx_ctx: MlxContext, maze: Maze):
         self._maze = maze
+        self._mlx_ctx = mlx_ctx
         maze_width_px, maze_height_px, cell_size = \
             self._get_maze_size_pixels(mlx_ctx)
         self._cell_size = cell_size
 
-        self._mlx_ctx = mlx_ctx
         self.fb = FrameBuffer(mlx_ctx, maze_width_px, maze_height_px)
 
         self._walls = self._load_walls()
@@ -69,10 +69,9 @@ class DrawMaze:
             self, mlx_ctx: MlxContext
             ) -> Tuple[int, int, int]:
         target_maze_width = int(mlx_ctx.win_width * _MAZE_WIDTH_SCALE)
-        target_maze_height = int(mlx_ctx.win_height * _MAZE_WIDTH_SCALE)
 
         max_cell_size_width = target_maze_width // self._maze.width
-        max_cell_size_height = target_maze_height // self._maze.height
+        max_cell_size_height = self._mlx_ctx.win_height // self._maze.height
 
         cell_size = max(1, min(max_cell_size_width, max_cell_size_height))
 

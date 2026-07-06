@@ -28,7 +28,7 @@ class Maze:
     def generate_new_maze(self):
         self.width = self.config.levels[self.level].width
         self.height = self.config.levels[self.level].height
-        mazegen = MazeGenerator((self.width, self.height), perfect=True)
+        mazegen = MazeGenerator((self.width, self.height))
 
         self._reset_bitboard()
 
