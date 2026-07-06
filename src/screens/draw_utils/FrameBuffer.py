@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
+from typing import Tuple
 from src.models.dataclasses import MlxContext
+from PIL import Image
 
 
 class FrameBuffer:
@@ -23,7 +25,7 @@ class FrameBuffer:
 
     @staticmethod
     def draw_blended_tile(
-            pixels,
+            pixels: NDArray[np.uint8],
             tile: NDArray[np.uint8],
             y0: int,
             x0: int) -> None:
@@ -53,3 +55,40 @@ class FrameBuffer:
 
     def commit(self) -> None:
         self._data[:] = self._frame.tobytes()
+
+    @staticmethod
+    def swap_colors_in_image_leave_out(
+            color_to_leave_out_bgra: Tuple[int, int, int, int],
+            new_color_bgra: Tuple[int, int, int, int],
+            image: NDArray[np.uint8]) -> NDArray[np.uint8]:
+        new_image = np.array(image)
+        mask = np.all(new_image != [*color_to_leave_out_bgra], axis=-1)
+
+        new_image[mask] = [*new_color_bgra]
+
+        return new_image
+
+    @staticmethod
+    def swap_colors_in_image_color_to_color(
+            old_color_bgra: Tuple[int, int, int, int],
+            new_color_bgra: Tuple[int, int, int, int],
+            image: NDArray[np.uint8]) -> NDArray[np.uint8]:
+        new_image = np.array(image)
+        mask = np.all(new_image == [*old_color_bgra], axis=-1)
+
+        new_image[mask] = [*new_color_bgra]
+
+        return new_image
+
+    @staticmethod
+    def get_image_array(file_name: str, width: int,
+                        height: int) -> NDArray[np.uint8]:
+        img = Image.open(file_name)
+        r, g, b, a = img.split()
+        img_bgra = Image.merge("RGBA", (b, g, r, a))
+        resized = img_bgra.resize(
+            (width, height),
+            Image.Resampling.NEAREST
+            )
+
+        return np.array(resized)
