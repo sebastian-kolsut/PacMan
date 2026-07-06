@@ -33,11 +33,8 @@ class DrawMaze:
         return self.fb.img_ptr
 
     def get_maze_position(self):
-        true_maze_scale = self._maze.width * self._cell_size \
-                              / self._mlx_ctx.win_width
-        true_screen_margin = (1 - true_maze_scale) / 2
-
-        return int(self._mlx_ctx.win_width * true_screen_margin)
+        """Return the x coordinate that centers the maze horizontally."""
+        return max(0, (self._mlx_ctx.win_width - self.fb.width) // 2)
 
     def draw(self) -> None:
         pixels = self.fb.get_array()
@@ -71,12 +68,13 @@ class DrawMaze:
     def _get_maze_size_pixels(
             self, mlx_ctx: MlxContext
             ) -> Tuple[int, int, int]:
-        max_cell_size_width = \
-            mlx_ctx.win_width // int(self._maze.width * _MAZE_WIDTH_SCALE)
-        max_cell_size_height = \
-            mlx_ctx.win_height // self._maze.height
+        target_maze_width = int(mlx_ctx.win_width * _MAZE_WIDTH_SCALE)
+        target_maze_height = int(mlx_ctx.win_height * _MAZE_WIDTH_SCALE)
 
-        cell_size = min(max_cell_size_width, max_cell_size_height)
+        max_cell_size_width = target_maze_width // self._maze.width
+        max_cell_size_height = target_maze_height // self._maze.height
+
+        cell_size = max(1, min(max_cell_size_width, max_cell_size_height))
 
         maze_width_px = cell_size * self._maze.width
         maze_height_px = cell_size * self._maze.height
