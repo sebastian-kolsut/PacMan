@@ -2,7 +2,6 @@ from src.models.dataclasses import MlxContext
 from src.screens.Maze import Maze
 from typing import Tuple, Dict
 from .FrameBuffer import FrameBuffer
-from PIL import Image
 from numpy.typing import NDArray
 import numpy as np
 
@@ -15,6 +14,12 @@ _LEFT = 8
 _MAZE_WIDTH_SCALE = 0.7
 
 _PATTERN_CELL = 0b1111
+
+_DEFAULT_WALL_COLOR = (51, 26, 17, 255)
+_PINK = (255, 184, 219, 255)
+_NO_COLOR = (0, 0, 0, 0)
+_PINK_PATTERN = (255, 184, 219, 165)
+
 
 class DrawMaze:
 
@@ -62,21 +67,24 @@ class DrawMaze:
         if self._maze.is_wall_left(bit_idx):
             mask |= _LEFT
 
+        img = self._walls[mask]
+
         if mask == _PATTERN_CELL:
             mask = self._get_pattern_mask(bit_idx)
-            
+            img = self.fb.swap_colors_in_image_leave_out(
+                _DEFAULT_WALL_COLOR, _PINK_PATTERN, self._walls[mask])
 
-        self.fb.draw_blended_tile(pixels, self._walls[mask],
+        self.fb.draw_blended_tile(pixels, img,
                                   y * self._cell_size, x * self._cell_size)
-    
-    def _get_pattern_mask(self, idx: int) -> NDArray[np.uint8]:
+
+    def _get_pattern_mask(self, idx: int) -> int:
         mask = _PATTERN_CELL
 
         up = idx - self._maze.width in self._maze.patters_positions
         right = idx + 1 in self._maze.patters_positions
         down = idx + self._maze.width in self._maze.patters_positions
         left = idx - 1 in self._maze.patters_positions
-        
+
         if up:
             mask &= ~_UP
         if right:
@@ -85,7 +93,7 @@ class DrawMaze:
             mask &= ~_DOWN
         if left:
             mask &= ~_LEFT
-        
+
         return mask
 
     def _get_maze_size_pixels(
@@ -103,43 +111,42 @@ class DrawMaze:
 
         return maze_width_px, maze_height_px, cell_size
 
-    def _get_image_array(self, file_name: str) -> NDArray[np.uint8]:
-        img = Image.open(file_name)
-        r, g, b, a = img.split()
-        img_bgra = Image.merge("RGBA", (b, g, r, a))
-        resized = img_bgra.resize(
-            (self._cell_size, self._cell_size),
-            Image.Resampling.NEAREST
-            )
+    def _get_image_array_wall(self, file_name: str) -> NDArray[np.uint8]:
+        img = self.fb.get_image_array(file_name, self._cell_size,
+                                      self._cell_size)
+        img = self.fb.swap_colors_in_image_leave_out(
+            _NO_COLOR, _PINK, img)
 
-        arr = np.array(resized)
-        mask = np.all(arr == [51, 26, 17, 255], axis=-1)
-
-        arr[mask] = [255, 184, 219, 255]
-        return arr
+        return img
 
     def _load_walls(self) -> Dict[int, NDArray[np.uint8]]:
         walls = {
-            0b0000: self._get_image_array("assets/maze_walls/all.png"),
-            0b0001: self._get_image_array(
+            0b0000: self._get_image_array_wall("assets/maze_walls/all.png"),
+            0b0001: self._get_image_array_wall(
                 "assets/maze_walls/down-left-right.png"),
-            0b0010: self._get_image_array(
+            0b0010: self._get_image_array_wall(
                 "assets/maze_walls/up-down-left.png"),
-            0b0011: self._get_image_array("assets/maze_walls/down-left.png"),
-            0b0100: self._get_image_array(
+            0b0011: self._get_image_array_wall(
+                "assets/maze_walls/down-left.png"),
+            0b0100: self._get_image_array_wall(
                 "assets/maze_walls/up-left-right.png"),
-            0b0101: self._get_image_array("assets/maze_walls/left-right.png"),
-            0b0110: self._get_image_array("assets/maze_walls/up-left.png"),
-            0b0111: self._get_image_array("assets/maze_walls/left.png"),
-            0b1000: self._get_image_array(
+            0b0101: self._get_image_array_wall(
+                "assets/maze_walls/left-right.png"),
+            0b0110: self._get_image_array_wall(
+                "assets/maze_walls/up-left.png"),
+            0b0111: self._get_image_array_wall("assets/maze_walls/left.png"),
+            0b1000: self._get_image_array_wall(
                 "assets/maze_walls/up-down-right.png"),
-            0b1001: self._get_image_array("assets/maze_walls/down-right.png"),
-            0b1010: self._get_image_array("assets/maze_walls/up-down.png"),
-            0b1011: self._get_image_array("assets/maze_walls/down.png"),
-            0b1100: self._get_image_array("assets/maze_walls/up-right.png"),
-            0b1101: self._get_image_array("assets/maze_walls/right.png"),
-            0b1110: self._get_image_array("assets/maze_walls/up.png"),
-            0b1111: self._get_image_array("assets/maze_walls/closed.png")
+            0b1001: self._get_image_array_wall(
+                "assets/maze_walls/down-right.png"),
+            0b1010: self._get_image_array_wall(
+                "assets/maze_walls/up-down.png"),
+            0b1011: self._get_image_array_wall("assets/maze_walls/down.png"),
+            0b1100: self._get_image_array_wall(
+                "assets/maze_walls/up-right.png"),
+            0b1101: self._get_image_array_wall("assets/maze_walls/right.png"),
+            0b1110: self._get_image_array_wall("assets/maze_walls/up.png"),
+            0b1111: self._get_image_array_wall("assets/maze_walls/closed.png")
             }
 
         return walls
