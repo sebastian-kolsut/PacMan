@@ -1,7 +1,7 @@
 from src.models.dataclasses import GameState, MlxContext, Screen
+from src.screens import PlayGame, MainMenu
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
-from src.screens import PlayGame
 import time
 
 
@@ -11,6 +11,7 @@ class MainGameLoop:
         self._config = Parser().parse("tests/jsons/valid_no_comments.json")
         self._state = GameState()
         self._mlx_ctx = self._init_mlx()
+        self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._game_screen = PlayGame(self._mlx_ctx, self._config)
 
     def run(self) -> None:
@@ -19,13 +20,12 @@ class MainGameLoop:
     def game_loop(self, param) -> int:
         now = time.time()
 
-        self._state.screen = Screen.GAME_PLAYING
         if now - self._state.last_frame_time < self._state.frame_interval:
             return 0
         # update() & render() for all
         match self._state.screen:
             case Screen.MAIN_MENU:
-                pass
+                self._main_menu_screen.render()
             case Screen.GAME_PLAYING:
                 self._game_screen.render()
             case Screen.WIN_OR_LOSE:
@@ -35,14 +35,20 @@ class MainGameLoop:
     def on_key(self, keycode: int, param) -> int:
         if keycode == 65307:  # Escape (X11 keysym)
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+
+        if keycode == 32 and self._state.screen == Screen.MAIN_MENU:  # Space
+            self._state.screen = Screen.GAME_PLAYING
         return 0
 
     def _init_mlx(self) -> MlxContext:
         m = Mlx()
 
         mlx_ptr = m.mlx_init()
-        win_width, win_height = m.mlx_get_screen_size(mlx_ptr)[1:]
-        win_height = int(win_height * 0.93)
+        _, screen_width, screen_height = m.mlx_get_screen_size(mlx_ptr)
+
+        win_width = min(2280, int(screen_width * 0.85))
+        win_height = min(1900, int(screen_height * 0.85))
+
         win_ptr = m.mlx_new_window(mlx_ptr, win_width, win_height, "PacMan")
 
         mlx_ctx = MlxContext(
