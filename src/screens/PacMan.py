@@ -40,6 +40,7 @@ class PacMan:
         self._pac_y = 0.0
         self._speed = cell_size * 2.5
         self._direction = Direction.RIGHT
+        self._pending_direction = Direction.RIGHT
         self._animation = 0
 
         self._assets = {
@@ -69,25 +70,34 @@ class PacMan:
 
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:
-            self._try_turn(_DIRETCIONS[keycode], delta_time)
+            self._pending_direction = _DIRETCIONS[keycode]
+        self._try_turn(delta_time)
 
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)
 
-        if self._check_for_wall(next_pac_x, next_pac_y):
+        if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
             dir = self._direction
-            self._try_turn(Direction.UP, delta_time)
-            self._try_turn(Direction.RIGHT, delta_time)
+            pen = self._pending_direction
+            self._pending_direction = Direction.UP
+            self._try_turn(delta_time)
+            self._pending_direction = Direction.RIGHT
+            self._try_turn(delta_time)
             self._direction = dir
+            self._pending_direction = pen
             return
 
         self._pac_x, self._pac_y = next_pac_x, next_pac_y
 
-    def _try_turn(self, new_direction: Direction, delta_time: float):
-        is_vertical = new_direction in (Direction.UP, Direction.DOWN)
+    def _try_turn(self, delta_time: float):
+        is_vertical = self._pending_direction in (Direction.UP, Direction.DOWN)
         was_vertical = self._direction in (Direction.UP, Direction.DOWN)
 
         if is_vertical == was_vertical:
-            self._direction = new_direction
+            self._direction = self._pending_direction
+            return
+        
+        if self._check_for_wall(*self._get_next_step_xy(delta_time),
+                                self._pending_direction):
             return
 
         aligned_coord = self._pac_x if is_vertical else self._pac_y
@@ -106,9 +116,9 @@ class PacMan:
         else:
             self._pac_y = snapped
 
-        self._direction = new_direction
+        self._direction = self._pending_direction
 
-    def _check_for_wall(self, next_x, next_y) -> bool:
+    def _check_for_wall(self, next_x, next_y, direction) -> bool:
         if self._direction in (Direction.UP, Direction.LEFT):
             cell_x = int(np.ceil(next_x / self._cell_size))
             cell_y = int(np.ceil(next_y / self._cell_size))
@@ -118,7 +128,7 @@ class PacMan:
 
         cell_idx = cell_y * self._maze.width + cell_x
 
-        return self._maze.is_wall_direction(cell_idx, self._direction)
+        return self._maze.is_wall_direction(cell_idx, direction)
 
     def _get_next_step_xy(self, delta_time: float):
         if self._direction == Direction.UP:
