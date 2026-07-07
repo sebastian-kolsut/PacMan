@@ -1,5 +1,6 @@
 from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
 from src.models import Config
+from src.models import Direction
 from dataclasses import dataclass
 from typing import Set
 
@@ -23,6 +24,7 @@ class Maze:
         self.config = config
         self.level = 0
         self.bitboards = Bitboards()
+        self.dirty = False
 
         self.generate_new_maze()
         self.patters_positions = self._load_42_patern_positions()
@@ -38,6 +40,8 @@ class Maze:
             for x in range(self.width):
                 self._set_cell_value(x, y, mazegen, self.width)
 
+        self.dirty = False
+
     def is_wall_up(self, bit_idx: int) -> bool:
         return (self.bitboards.up & (1 << bit_idx)) != 0
 
@@ -49,6 +53,19 @@ class Maze:
 
     def is_wall_left(self, bit_idx: int) -> bool:
         return (self.bitboards.left & (1 << bit_idx)) != 0
+
+    def is_wall_direction(self, bit_idx: int, direction: Direction) -> bool:
+        match direction:
+            case Direction.UP:
+                return self.is_wall_up(bit_idx)
+            case Direction.RIGHT:
+                return self.is_wall_right(bit_idx)
+            case Direction.DOWN:
+                return self.is_wall_down(bit_idx)
+            case Direction.LEFT:
+                return self.is_wall_left(bit_idx)
+
+        return False
 
     def _load_42_patern_positions(self) -> Set[int]:
         positions: Set[int] = set()
@@ -64,13 +81,13 @@ class Maze:
                         width: int) -> None:
         bit_pos = y * width + x
 
-        if (mazegen.maze[y][x] & (1 << _UP)) != 0:
+        if (mazegen.maze[y][x] & (1 << Direction.UP)) != 0:
             self.bitboards.up |= (1 << bit_pos)
-        if (mazegen.maze[y][x] & (1 << _RIGHT)) != 0:
+        if (mazegen.maze[y][x] & (1 << Direction.RIGHT)) != 0:
             self.bitboards.right |= (1 << bit_pos)
-        if (mazegen.maze[y][x] & (1 << _DOWN)) != 0:
+        if (mazegen.maze[y][x] & (1 << Direction.DOWN)) != 0:
             self.bitboards.down |= (1 << bit_pos)
-        if (mazegen.maze[y][x] & (1 << _LEFT)) != 0:
+        if (mazegen.maze[y][x] & (1 << Direction.LEFT)) != 0:
             self.bitboards.left |= (1 << bit_pos)
 
     def _reset_bitboard(self) -> None:

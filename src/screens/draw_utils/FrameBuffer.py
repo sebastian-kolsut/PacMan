@@ -23,6 +23,13 @@ class FrameBuffer:
 
         self._frame = np.zeros((height, size_line), dtype=np.uint8)
 
+    def put_image_to_window(self) -> None:
+        self._mlx_ctx.m.mlx_put_image_to_window(
+            self._mlx_ctx.mlx_ptr,
+            self._mlx_ctx.win_ptr,
+            self.img_ptr, 0, 0
+        )
+
     @staticmethod
     def draw_blended_tile(
             pixels: NDArray[np.uint8],
@@ -56,13 +63,16 @@ class FrameBuffer:
     def commit(self) -> None:
         self._data[:] = self._frame.tobytes()
 
+    def get_frame(self):
+        return self._frame
+
     @staticmethod
     def swap_colors_in_image_leave_out(
             color_to_leave_out_bgra: Tuple[int, int, int, int],
             new_color_bgra: Tuple[int, int, int, int],
             image: NDArray[np.uint8]) -> NDArray[np.uint8]:
         new_image = np.array(image)
-        mask = np.all(new_image != [*color_to_leave_out_bgra], axis=-1)
+        mask = ~np.all(new_image == [*color_to_leave_out_bgra], axis=-1)
 
         new_image[mask] = [*new_color_bgra]
 

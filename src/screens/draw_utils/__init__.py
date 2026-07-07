@@ -1,5 +1,5 @@
 from .FrameBuffer import FrameBuffer
-from .DrawMaze import DrawMaze
+from .RenderMaze import RenderMaze
 
 
-__all__ = ["FrameBuffer", "DrawMaze"]
+__all__ = ["FrameBuffer", "RenderMaze"]

@@ -15,13 +15,12 @@ _MAZE_WIDTH_SCALE = 0.7
 
 _PATTERN_CELL = 0b1111
 
-_DEFAULT_WALL_COLOR = (51, 26, 17, 255)
 _PINK = (255, 184, 219, 255)
 _NO_COLOR = (0, 0, 0, 0)
 _PINK_PATTERN = (255, 184, 219, 165)
 
 
-class DrawMaze:
+class RenderMaze:
 
     def __init__(self, mlx_ctx: MlxContext, maze: Maze):
         self._maze = maze
@@ -34,6 +33,8 @@ class DrawMaze:
 
         self._walls = self._load_walls()
 
+        self._pixels = self.fb.get_array()
+
     def get_img_ptr(self) -> int:
         return self.fb.img_ptr
 
@@ -41,17 +42,25 @@ class DrawMaze:
         """Return the x coordinate that centers the maze horizontally."""
         return max(0, (self._mlx_ctx.win_width - self.fb.width) // 2)
 
-    def draw(self) -> None:
-        pixels = self.fb.get_array()
-        pixels[:, :] = [0, 0, 0, 0]
+    def get_cell_size(self) -> int:
+        return self._cell_size
+
+    def render(self) -> NDArray[np.uint8]:
+        if self._maze.dirty:
+            return self._pixels
+
+        self._pixels = self.fb.get_array()
+        self._pixels[:, :] = [0, 0, 0, 0]
 
         # self.fb.draw_blended_tile(pixels, self._walls[0b1100], 20, 20)
 
         for y in range(self._maze.height):
             for x in range(self._maze.width):
-                self._draw_cell_to_img(x, y, pixels)
+                self._draw_cell_to_img(x, y, self._pixels)
 
-        self.fb.commit()
+        self._maze.dirty = True
+
+        return self._pixels
 
     def _draw_cell_to_img(self, x: int, y: int,
                           pixels: NDArray[np.uint8]) -> None:
@@ -72,7 +81,7 @@ class DrawMaze:
         if mask == _PATTERN_CELL:
             mask = self._get_pattern_mask(bit_idx)
             img = self.fb.swap_colors_in_image_leave_out(
-                _DEFAULT_WALL_COLOR, _PINK_PATTERN, self._walls[mask])
+                _PINK, _PINK_PATTERN, self._walls[mask])
 
         self.fb.draw_blended_tile(pixels, img,
                                   y * self._cell_size, x * self._cell_size)

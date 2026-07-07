@@ -1,4 +1,4 @@
-from src.screens.draw_utils import DrawMaze
+from src.screens.draw_utils import RenderMaze
 from src.models.dataclasses import MlxContext
 from src.screens.Maze import Maze
 from src.Parser import Parser
@@ -27,7 +27,7 @@ def test_get_maze_pos() -> None:
     config = Parser().parse("tests/jsons/valid_no_comments.json")
     maze = Maze(config)
 
-    draw = DrawMaze(mlx_ctx, maze)
+    draw = RenderMaze(mlx_ctx, maze)
 
     x = draw.get_maze_position()
 
