@@ -7,6 +7,12 @@ import time
 
 _WASD = {119, 97, 115, 100}
 
+KEY_ESCAPE = 65307
+KEY_SPACE = 32
+KEY_ENTER = 65293
+KEY_UP = 65362
+KEY_DOWN = 65364
+
 
 class MainGameLoop:
 
@@ -41,16 +47,38 @@ class MainGameLoop:
         return 0
 
     def on_key(self, keycode: int, param) -> int:
-        if keycode == 65307:  # Escape (X11 keysym)
+        if keycode == KEY_ESCAPE:
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+            return 0
 
-        if keycode == 32 and self._state.screen == Screen.MAIN_MENU:  # Space
-            self._state.screen = Screen.GAME_PLAYING
+        if self._state.screen == Screen.MAIN_MENU:
+            self._handle_main_menu_key(keycode)
+            return 0
 
         if keycode in _WASD and self._state.screen == Screen.GAME_PLAYING:
             self._game_screen.handle_key_press(keycode)
 
         return 0
+
+    def _handle_main_menu_key(self, keycode: int) -> None:
+        if keycode == KEY_UP:
+            self._main_menu_screen.move_selection_up()
+        elif keycode == KEY_DOWN:
+            self._main_menu_screen.move_selection_down()
+        elif keycode in (KEY_ENTER, KEY_SPACE):
+            self._activate_main_menu_action()
+
+    def _activate_main_menu_action(self) -> None:
+        action = self._main_menu_screen.get_selected_action()
+
+        if action == "start":
+            self._state.screen = Screen.GAME_PLAYING
+        elif action == "exit":
+            self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+        elif action == "instructions":
+            print("not active yet")
+        elif action == "highscores":
+            print(" not active yet")
 
     def _init_mlx(self) -> MlxContext:
         m = Mlx()
