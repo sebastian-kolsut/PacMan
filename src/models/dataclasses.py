@@ -11,6 +11,13 @@ class Screen(Enum):
     WIN_OR_LOSE = auto()
 
 
+class Direction(int, Enum):
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
+
+
 @dataclass
 class GameState:
 

@@ -52,7 +52,7 @@ class Config(BaseModel):
     levels: List[LevelModel] = _DEFAULT_LEVELS
 
     @model_validator(mode="after")
-    def set_pacgum_invalid(self) -> Config:
+    def set_pacgum_invalid(self) -> "Config":
         smallest_map = min(self.levels, key=lambda lvl: lvl.width * lvl.height)
         smallest_map_size = smallest_map.height * smallest_map.width
 

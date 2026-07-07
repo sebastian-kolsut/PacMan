@@ -5,6 +5,9 @@ from mlx import Mlx  # type: ignore[import-untyped]
 import time
 
 
+_WASD = {119, 97, 115, 100}
+
+
 class MainGameLoop:
 
     def __init__(self) -> None:
@@ -19,17 +22,22 @@ class MainGameLoop:
 
     def game_loop(self, param) -> int:
         now = time.time()
+        difference = now - self._state.last_frame_time
 
-        if now - self._state.last_frame_time < self._state.frame_interval:
-            return 0
+        if difference < self._state.frame_interval:
+            time.sleep(difference)
+        self._state.last_frame_time = time.time()
+
         # update() & render() for all
         match self._state.screen:
             case Screen.MAIN_MENU:
                 self._main_menu_screen.render()
             case Screen.GAME_PLAYING:
+                self._game_screen.update(difference)
                 self._game_screen.render()
             case Screen.WIN_OR_LOSE:
                 pass
+
         return 0
 
     def on_key(self, keycode: int, param) -> int:
@@ -38,6 +46,10 @@ class MainGameLoop:
 
         if keycode == 32 and self._state.screen == Screen.MAIN_MENU:  # Space
             self._state.screen = Screen.GAME_PLAYING
+
+        if keycode in _WASD and self._state.screen == Screen.GAME_PLAYING:
+            self._game_screen.handle_key_press(keycode)
+
         return 0
 
     def _init_mlx(self) -> MlxContext:
