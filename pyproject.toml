@@ -20,5 +20,5 @@ dependencies = [
 pythonpath = ["."]
 
 [tool.uv.sources]
-mazegenerator = { path = "wheels/mazegenerator-2.0.2-py3-none-any.whl" }
 mlx = { path = "wheels/mlx-2.2-py3-none-any.whl" }
+mazegenerator = { path = "wheels/mazegenerator-2.1.0-py3-none-any.whl" }
