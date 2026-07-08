@@ -38,7 +38,7 @@ class PacMan:
         self._maze = maze
         self._pac_x = 0.0
         self._pac_y = 0.0
-        self._speed = cell_size * 2.5
+        self._speed = cell_size * 3.0
         self._direction = Direction.RIGHT
         self._pending_direction = Direction.RIGHT
         self._animation = 0
@@ -95,9 +95,10 @@ class PacMan:
         if is_vertical == was_vertical:
             self._direction = self._pending_direction
             return
-        
-        if self._check_for_wall(*self._get_next_step_xy(delta_time),
-                                self._pending_direction):
+
+        next_x, next_y = self._get_next_step_xy(delta_time)
+
+        if self._check_for_wall(next_x, next_y, self._pending_direction):
             return
 
         aligned_coord = self._pac_x if is_vertical else self._pac_y
