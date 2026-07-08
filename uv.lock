@@ -85,10 +85,10 @@ wheels = [
 
 [[package]]
 name = "mazegenerator"
-version = "2.0.2"
-source = { path = "wheels/mazegenerator-2.0.2-py3-none-any.whl" }
+version = "2.1.0"
+source = { path = "wheels/mazegenerator-2.1.0-py3-none-any.whl" }
 wheels = [
-    { filename = "mazegenerator-2.0.2-py3-none-any.whl", hash = "sha256:88b5b212ae1a90faa8aa6f8518abe6968a30be071cddbdd02f8c52c6936c209e" },
+    { filename = "mazegenerator-2.1.0-py3-none-any.whl", hash = "sha256:98e12f7e989cef03dd4411657d7bee12653804aee87a568eddfaf21436ffd4aa" },
 ]
 
 [[package]]
@@ -156,7 +156,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "db", specifier = ">=0.1.1" },
-    { name = "mazegenerator", path = "wheels/mazegenerator-2.0.2-py3-none-any.whl" },
+    { name = "mazegenerator", path = "wheels/mazegenerator-2.1.0-py3-none-any.whl" },
     { name = "mlx", path = "wheels/mlx-2.2-py3-none-any.whl" },
     { name = "numpy", specifier = ">=2.5.0" },
     { name = "pillow", specifier = ">=12.3.0" },

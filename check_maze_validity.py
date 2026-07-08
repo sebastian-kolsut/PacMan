@@ -10,11 +10,14 @@ Usage::
     python3 check_maze_validity.py
     python3 check_maze_validity.py --seeds 1 2 3 --sizes 15 15 --sizes 30 20
     python3 check_maze_validity.py --include-perfect
+    python3 check_maze_validity.py --num-seeds 20
+    python3 check_maze_validity.py --num-seeds 20 --rng-seed 42
 """
 
 from __future__ import annotations
 
 import argparse
+import random
 import sys
 from typing import List, Tuple
 
@@ -29,14 +32,17 @@ from maze_analyzer import (
 )
 
 DEFAULT_SIZES: List[Tuple[int, int]] = [(10, 10), (20, 20), (35, 20)]
-DEFAULT_SEEDS: List[int] = list(range(1, 11))
+DEFAULT_NUM_SEEDS = 10
+SEED_RANGE = (1, 1_000_000)
 
 
 def to_analyzer_maze(mazegen: MazeGenerator) -> Maze:
     return Maze(mazegen.maze, mazegen.maze_entry, mazegen.maze_exit)
 
 
-def run_case(width: int, height: int, seed: int, perfect: bool) -> Tuple[bool, str]:
+def run_case(
+    width: int, height: int, seed: int, perfect: bool
+) -> Tuple[bool, str]:
     mazegen = MazeGenerator((width, height), perfect=perfect, seed=seed)
     report = analyze(to_analyzer_maze(mazegen))
     line = verdict(report, DEFAULT_MIN_LOOPS, DEFAULT_MAX_DEAD_ENDS)
@@ -51,12 +57,21 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
                     "against maze_analyzer's default thresholds.",
     )
     parser.add_argument(
-        "--seeds", type=int, nargs="+", default=DEFAULT_SEEDS,
-        help="seeds to generate (default: 1-10)",
+        "--seeds", type=int, nargs="+", default=None,
+        help="explicit seeds to generate (default: random, see --num-seeds)",
     )
     parser.add_argument(
-        "--sizes", type=int, nargs=2, action="append", metavar=("WIDTH", "HEIGHT"),
-        dest="sizes",
+        "--num-seeds", type=int, default=DEFAULT_NUM_SEEDS,
+        help="how many random seeds to draw when --seeds is not given "
+             "(default: %(default)s)",
+    )
+    parser.add_argument(
+        "--rng-seed", type=int, default=None,
+        help="seed the RNG used to pick random seeds, for reproducible runs",
+    )
+    parser.add_argument(
+        "--sizes", type=int, nargs=2, action="append",
+        metavar=("WIDTH", "HEIGHT"), dest="sizes",
         help="width height pair to test (repeatable; default: 10x10, 20x20, "
              "35x20)",
     )
@@ -67,6 +82,9 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if not args.sizes:
         args.sizes = DEFAULT_SIZES
+    if args.seeds is None:
+        rng = random.Random(args.rng_seed)
+        args.seeds = [rng.randint(*SEED_RANGE) for _ in range(args.num_seeds)]
     return args
 
 
@@ -74,6 +92,7 @@ def main(argv: List[str]) -> int:
     args = parse_args(argv)
     modes = [False, True] if args.include_perfect else [False]
     total = failures = 0
+    print(f"Using random seeds: {args.seeds}\n")
     for width, height in args.sizes:
         for seed in args.seeds:
             for perfect in modes:
@@ -81,7 +100,10 @@ def main(argv: List[str]) -> int:
                 ok, line = run_case(width, height, seed, perfect)
                 status = "PASS" if ok else "FAIL"
                 mode = "perfect" if perfect else "imperfect"
-                print(f"[{status}] {width}x{height} seed={seed} ({mode}): {line}")
+                print(
+                    f"[{status}] {width}x{height} seed={seed} "
+                    f"({mode}): {line}"
+                )
                 failures += not ok
     print(f"\n{total - failures}/{total} maze(s) passed.")
     return 0 if failures == 0 else 1
