@@ -10,12 +10,20 @@ import numpy as np
 
 
 _W, _A, _S, _D = 119, 97, 115, 100
+_A_UP, _A_RIGHT, _A_DOWN, _A_LEFT = 65362, 65363, 65364, 65361
 
-_DIRETCIONS = {
+_DIRETCIONS_WSAD = {
     _W: Direction.UP,
     _A: Direction.LEFT,
     _S: Direction.DOWN,
     _D: Direction.RIGHT
+}
+
+_DIRETCIONS_ARROWS = {
+    _A_UP: Direction.UP,
+    _A_LEFT: Direction.LEFT,
+    _A_DOWN: Direction.DOWN,
+    _A_RIGHT: Direction.RIGHT
 }
 
 _UP_FOLDER = "assets/pac_man/pacman-up"
@@ -70,7 +78,10 @@ class PacMan:
 
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:
-            self._pending_direction = _DIRETCIONS[keycode]
+            if keycode in _DIRETCIONS_WSAD.keys():
+                self._pending_direction = _DIRETCIONS_WSAD[keycode]
+            else:
+                self._pending_direction = _DIRETCIONS_ARROWS[keycode]
         self._try_turn(delta_time)
 
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)

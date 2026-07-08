@@ -9,7 +9,9 @@ from Xlib.display import Display
 
 
 _W, _A, _S, _D = 119, 97, 115, 100
-_DIRECTION_KEYS = (_W, _A, _S, _D)
+_A_UP, _A_RIGHT, _A_DOWN, _A_LEFT = 65362, 65363, 65364, 65361
+_DIRECTION_KEYS = (_W, _A, _S, _D,
+                   _A_UP, _A_RIGHT, _A_DOWN, _A_LEFT)
 
 
 class PlayGame:
