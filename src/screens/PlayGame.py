@@ -5,6 +5,12 @@ from src.screens.Maze import Maze
 from src.screens.PacMan import PacMan
 from src.screens.draw_utils import FrameBuffer
 
+from Xlib.display import Display
+
+
+_W, _A, _S, _D = 119, 97, 115, 100
+_DIRECTION_KEYS = (_W, _A, _S, _D)
+
 
 class PlayGame:
     def __init__(self, mlx_ctx: MlxContext, config: Config) -> None:
@@ -15,14 +21,25 @@ class PlayGame:
         self._render_maze = RenderMaze(mlx_ctx, self._maze)
         self._pac_man = PacMan(
             self._render_maze.get_cell_size(), mlx_ctx, self._maze)
-        self._key_pressed = 0
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
+        self._last_pressed_key = 0
 
-    def handle_key_press(self, keycode: int):
-        self._key_pressed = keycode
+        self._keyboard = Display()
+        self._direction_keycodes = {
+            key: self._keyboard.keysym_to_keycode(key)
+            for key in _DIRECTION_KEYS
+        }
+
+    def _get_pressed_direction(self) -> int:
+        keymap = self._keyboard.query_keymap()
+        for key in _DIRECTION_KEYS:
+            keycode = self._direction_keycodes[key]
+            if keymap[keycode // 8] & (1 << (keycode % 8)):
+                return key
+        return 0
 
     def update(self, difference: float) -> None:
-        self._pac_man.update(difference, self._key_pressed)
+        self._pac_man.update(difference, self._get_pressed_direction())
 
     def render(self) -> None:
         maze_img = self._render_maze.render()
@@ -43,16 +60,3 @@ class PlayGame:
 
         self._fb.commit()
         self._fb.put_image_to_window()
-
-        # self._mlx_ctx.m.mlx_put_image_to_window(
-        #     self._mlx_ctx.mlx_ptr,
-        #     self._mlx_ctx.win_ptr,
-        #     self._render_maze.get_img_ptr(),
-        #     self._render_maze.get_maze_position(),
-        #     0)
-        # self._mlx_ctx.m.mlx_put_image_to_window(
-        #     self._mlx_ctx.mlx_ptr,
-        #     self._mlx_ctx.win_ptr,
-        #     self._pac_man.get_img_ptr(),
-        #     self._pac_man._offset,
-        #     self._pac_man._offset - 465)

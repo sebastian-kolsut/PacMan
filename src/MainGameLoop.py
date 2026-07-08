@@ -1,11 +1,16 @@
 from src.models.dataclasses import GameState, MlxContext, Screen
 from src.screens import PlayGame, MainMenu
+from typing import Set
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
 import time
 
 
-_WASD = {119, 97, 115, 100}
+_KEY_PRESS_MASK = 1
+_KEY_RELEASE_MASK = 2
+
+_KEY_PRESS_EVENT = 2
+_KEY_RELEASE_EVENT = 3
 
 KEY_ESCAPE = 65307
 KEY_SPACE = 32
@@ -22,6 +27,7 @@ class MainGameLoop:
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._game_screen = PlayGame(self._mlx_ctx, self._config)
+        self._pressed_keys: Set[int] = set()
 
     def run(self) -> None:
         self._mlx_ctx.m.mlx_loop(self._mlx_ctx.mlx_ptr)
@@ -46,8 +52,18 @@ class MainGameLoop:
 
         return 0
 
+<<<<<<< add-pacman
+    def on_key_press(self, keycode: int, param) -> int:
+        if keycode in self._pressed_keys:
+            return 0
+
+        self._pressed_keys.add(keycode)
+
+        if keycode == 65307:  # Escape (X11 keysym)
+=======
     def on_key(self, keycode: int, param) -> int:
         if keycode == KEY_ESCAPE:
+>>>>>>> main
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
             return 0
 
@@ -55,11 +71,12 @@ class MainGameLoop:
             self._handle_main_menu_key(keycode)
             return 0
 
-        if keycode in _WASD and self._state.screen == Screen.GAME_PLAYING:
-            self._game_screen.handle_key_press(keycode)
-
         return 0
 
+<<<<<<< add-pacman
+    def on_key_release(self, keycode: int, param):
+        self._pressed_keys.discard(keycode)
+=======
     def _handle_main_menu_key(self, keycode: int) -> None:
         if keycode == KEY_UP:
             self._main_menu_screen.move_selection_up()
@@ -79,6 +96,7 @@ class MainGameLoop:
             print("not active yet")
         elif action == "highscores":
             print(" not active yet")
+>>>>>>> main
 
     def _init_mlx(self) -> MlxContext:
         m = Mlx()
@@ -100,6 +118,9 @@ class MainGameLoop:
             )
         mlx_ctx.m.mlx_loop_hook(
             mlx_ctx.mlx_ptr, self.game_loop, None)
-        mlx_ctx.m.mlx_key_hook(win_ptr, self.on_key, None)
+        m.mlx_hook(win_ptr, _KEY_PRESS_EVENT, _KEY_PRESS_MASK,
+                   self.on_key_press, None)
+        m.mlx_hook(win_ptr, _KEY_RELEASE_EVENT, _KEY_RELEASE_MASK,
+                   self.on_key_release, None)
 
         return mlx_ctx
