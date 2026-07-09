@@ -1,8 +1,7 @@
 from src.models.dataclasses import MlxContext
-from src.screens.Maze import Maze
+from src.screens.game.Maze import Maze
 from typing import Tuple, Dict
-from .FrameBuffer import FrameBuffer
-from .RenderFont import RenderFont
+from src.screens.draw_utils import FrameBuffer, RenderFont
 from numpy.typing import NDArray
 import numpy as np
 

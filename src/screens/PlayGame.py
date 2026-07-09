@@ -1,8 +1,5 @@
-from src.models.dataclasses import MlxContext
-from src.models import Config
-from src.screens.draw_utils import RenderMaze
-from src.screens.Maze import Maze
-from src.screens.PacMan import PacMan
+from src.models import Config, MlxContext
+from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
 from src.screens.draw_utils import FrameBuffer
 
 from Xlib.display import Display  # type: ignore[import-untyped]
@@ -21,8 +18,9 @@ class PlayGame:
         self._config = config
         self._maze = Maze(config)
         self._render_maze = RenderMaze(mlx_ctx, self._maze)
-        self._pac_man = PacMan(
-            self._render_maze.get_cell_size(), mlx_ctx, self._maze)
+        cell_size = self._render_maze.get_cell_size()
+        self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config.pacgum)
+        self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         self._last_pressed_key = 0
 
@@ -54,6 +52,7 @@ class PlayGame:
 
         self._fb.draw_blended_tile(pixels, maze_img, 0,
                                    maze_x)
+        self._pacgums.draw_pacgums_to_image(pixels, maze_x)
         self._fb.draw_blended_tile(
             pixels, pac_img,
             int(self._pac_man._pos_y) + self._pac_man._offset,

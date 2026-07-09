@@ -52,8 +52,8 @@ class RenderFont:
         ascent, descent = self.font.getmetrics()
 
         bboxes = {}
-        min_top = 0
-        max_bottom = ascent + descent
+        min_top = 0.0
+        max_bottom = float(ascent + descent)
         for i in range(*_ASCII_RANGE):
             char = chr(i)
             bbox = self.font.getbbox(char)
@@ -61,8 +61,8 @@ class RenderFont:
             min_top = min(min_top, bbox[1])
             max_bottom = max(max_bottom, bbox[3])
 
-        font_max_height = max_bottom - min_top
-        self._font_height = max_bottom - min_top
+        font_max_height = int(max_bottom - min_top)
+        self._font_height = font_max_height
         y_pos = 0 - min_top
 
         for i in range(*_ASCII_RANGE):
