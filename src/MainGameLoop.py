@@ -1,5 +1,5 @@
 from src.models.dataclasses import GameState, MlxContext, Screen
-from src.screens import PlayGame, MainMenu
+from src.screens import PlayGame, MainMenu, InstructionsScreen
 from typing import Set
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
@@ -26,6 +26,7 @@ class MainGameLoop:
         self._state = GameState()
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
+        self._instructions_screen = InstructionsScreen(self._mlx_ctx)
         self._game_screen = PlayGame(self._mlx_ctx, self._config)
         self._pressed_keys: Set[int] = set()
 
@@ -47,6 +48,8 @@ class MainGameLoop:
             case Screen.GAME_PLAYING:
                 self._game_screen.update(difference)
                 self._game_screen.render()
+            case Screen.INSTRUCTIONS:
+                self._instructions_screen.render()
             case Screen.WIN_OR_LOSE:
                 pass
 
@@ -54,7 +57,10 @@ class MainGameLoop:
 
     def on_key(self, keycode: int, param) -> int:
         if keycode == KEY_ESCAPE:
-            self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+            if self._state.screen == Screen.INSTRUCTIONS:
+                self._state.screen = Screen.MAIN_MENU
+            else:
+                self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
             return 0
 
         if self._state.screen == Screen.MAIN_MENU:
@@ -79,7 +85,9 @@ class MainGameLoop:
         elif action == "exit":
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
         elif action == "instructions":
-            print("not active yet")
+            self._state.screen = Screen.INSTRUCTIONS
+        elif action == "settings":
+            print(" not active yet")
         elif action == "highscores":
             print(" not active yet")
 

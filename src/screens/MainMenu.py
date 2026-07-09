@@ -38,6 +38,7 @@ class MainMenu:
             "start",
             "instructions",
             "highscores",
+            "settings",
             "exit",
         ]
 
@@ -63,6 +64,11 @@ class MainMenu:
                 _BUTTON_WIDTH,
                 _BUTTON_HEIGHT,
             ),
+            "settings": FrameBuffer.get_image_array(
+                str(_ASSETS_DIR / "settings_button.png"),
+                _BUTTON_WIDTH,
+                _BUTTON_HEIGHT,
+            ),
             "exit": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "exit_button.png"),
                 _BUTTON_WIDTH,
@@ -83,6 +89,11 @@ class MainMenu:
             ),
             "highscores": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "highscores_button.png"),
+                _SELECTED_BUTTON_WIDTH,
+                _SELECTED_BUTTON_HEIGHT,
+            ),
+            "settings": FrameBuffer.get_image_array(
+                str(_ASSETS_DIR / "settings_button.png"),
                 _SELECTED_BUTTON_WIDTH,
                 _SELECTED_BUTTON_HEIGHT,
             ),
