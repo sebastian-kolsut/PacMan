@@ -55,7 +55,7 @@ class FrameBuffer:
         pixels[y0:y1, x0:x1, :3] = blended.astype(np.uint8)
         pixels[y0:y1, x0:x1, 3] = 255
 
-    def get_array(self) -> np.ndarray:
+    def get_array(self) -> NDArray[np.uint8]:
         return self._frame[:, :self.width * self._bytes_per_pixel].reshape(
             self.height, self.width, self._bytes_per_pixel
         )

@@ -75,6 +75,16 @@ class Character(ABC):
 
         return self._maze.is_wall_direction(cell_idx, direction)
 
+    def _get_cell_idx(self, x: int, y: int) -> int:
+        if self._direction in (Direction.UP, Direction.LEFT):
+            cell_x = int(np.ceil(x / self._cell_size))
+            cell_y = int(np.ceil(y / self._cell_size))
+        else:
+            cell_x = int(x // self._cell_size)
+            cell_y = int(y // self._cell_size)
+
+        return cell_y * self._maze.width + cell_x
+
     def _get_next_step_xy(self, delta_time: float):
         if self._direction == Direction.UP:
             return self._pos_x, self._pos_y - (self._speed * delta_time)

@@ -1,6 +1,6 @@
 from src.screens.draw_utils import RenderMaze
 from src.models.dataclasses import MlxContext
-from src.screens.Maze import Maze
+from src.screens.game.Maze import Maze
 from src.Parser import Parser
 from mlx import Mlx
 

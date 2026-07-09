@@ -1,7 +1,8 @@
 from .Maze import Maze
+from .Character import Character
+from .Pacgums import Pacgums
 from src.models.dataclasses import MlxContext
 from src.models import Direction
-from .Character import Character
 
 from numpy.typing import NDArray
 import numpy as np
@@ -29,8 +30,9 @@ _LEFT_FOLDER = "assets/pac_man/pacman-left"
 
 class PacMan(Character):
     def __init__(self, cell_size: int, mlx_ctx: MlxContext,
-                 maze: Maze) -> None:
+                 maze: Maze, pacgums: Pacgums) -> None:
         super().__init__(cell_size, mlx_ctx, maze)
+        self._pacgums = pacgums
         self._animation = 0
 
         self._assets = {
@@ -64,6 +66,9 @@ class PacMan(Character):
         self._try_turn(delta_time)
 
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)
+
+        cell_idx = self._get_cell_idx(next_pac_x, next_pac_y)
+        self._pacgums._eat_pacgum_if_there(cell_idx)
 
         if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
             dir = self._direction
