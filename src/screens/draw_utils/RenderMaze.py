@@ -2,6 +2,7 @@ from src.models.dataclasses import MlxContext
 from src.screens.Maze import Maze
 from typing import Tuple, Dict
 from .FrameBuffer import FrameBuffer
+from .RenderFont import RenderFont
 from numpy.typing import NDArray
 import numpy as np
 
@@ -30,9 +31,10 @@ class RenderMaze:
         self._cell_size = cell_size
 
         self.fb = FrameBuffer(mlx_ctx, maze_width_px, maze_height_px)
+        self._render_font = RenderFont("assets/fonts/ByteBounce.ttf", mlx_ctx,
+                                       0.02)
 
         self._walls = self._load_walls()
-
         self._pixels = self.fb.get_array()
 
     def get_img_ptr(self) -> int:
@@ -52,12 +54,15 @@ class RenderMaze:
         self._pixels = self.fb.get_array()
         self._pixels[:, :] = [0, 0, 0, 0]
 
+        text = self._render_font.put_text_to_image("Helloj   !")
+
         # self.fb.draw_blended_tile(pixels, self._walls[0b1100], 20, 20)
 
         for y in range(self._maze.height):
             for x in range(self._maze.width):
                 self._draw_cell_to_img(x, y, self._pixels)
 
+        self.fb.draw_blended_tile(self._pixels, text, 100, 100)
         self._maze.dirty = True
 
         return self._pixels
