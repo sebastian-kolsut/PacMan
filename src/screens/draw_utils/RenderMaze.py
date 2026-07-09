@@ -31,7 +31,8 @@ class RenderMaze:
         self._cell_size = cell_size
 
         self.fb = FrameBuffer(mlx_ctx, maze_width_px, maze_height_px)
-        self._render_font = RenderFont("assets/fonts/ByteBounce.ttf", mlx_ctx)
+        self._render_font = RenderFont("assets/fonts/ByteBounce.ttf", mlx_ctx,
+                                       0.02)
 
         self._walls = self._load_walls()
         self._pixels = self.fb.get_array()
@@ -53,7 +54,7 @@ class RenderMaze:
         self._pixels = self.fb.get_array()
         self._pixels[:, :] = [0, 0, 0, 0]
 
-        text = self._render_font.put_text_to_image("Hello!")
+        text = self._render_font.put_text_to_image("Helloj   !")
 
         # self.fb.draw_blended_tile(pixels, self._walls[0b1100], 20, 20)
 

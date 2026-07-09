@@ -5,7 +5,7 @@ from src.screens.Maze import Maze
 from src.screens.PacMan import PacMan
 from src.screens.draw_utils import FrameBuffer
 
-from Xlib.display import Display
+from Xlib.display import Display  # type: ignore[import-untyped]
 
 
 _W, _A, _S, _D = 119, 97, 115, 100
@@ -56,8 +56,8 @@ class PlayGame:
                                    maze_x)
         self._fb.draw_blended_tile(
             pixels, pac_img,
-            int(self._pac_man._pac_y) + self._pac_man._offset,
-            int(self._pac_man._pac_x) + self._pac_man._offset + maze_x
+            int(self._pac_man._pos_y) + self._pac_man._offset,
+            int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
             )
 
         self._fb.commit()
