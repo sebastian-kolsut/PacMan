@@ -8,6 +8,7 @@ class Screen(Enum):
 
     MAIN_MENU = auto()
     GAME_PLAYING = auto()
+    INSTRUCTIONS = auto()
     WIN_OR_LOSE = auto()
 
 

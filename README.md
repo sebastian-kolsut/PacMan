@@ -20,3 +20,9 @@ git push -u origin nazwa-twojego-brancha
 https://github.com/sebastian-kolsut/PacMan/pull/new/nazwa-brancha
 ```
 I tam juz sobie wszystko wypelniach co trzeba.
+
+
+Work Flow:
+git switch main
+git fetch --all --prune
+git pull --ff-only

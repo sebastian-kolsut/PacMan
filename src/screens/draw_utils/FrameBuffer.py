@@ -93,7 +93,7 @@ class FrameBuffer:
     @staticmethod
     def get_image_array(file_name: str, width: int,
                         height: int) -> NDArray[np.uint8]:
-        img = Image.open(file_name)
+        img = Image.open(file_name).convert("RGBA")
         r, g, b, a = img.split()
         img_bgra = Image.merge("RGBA", (b, g, r, a))
         resized = img_bgra.resize(
