@@ -12,24 +12,22 @@ _ASCII_RANGE = (32, 126)
 _WHITE = (255, 255, 255)
 
 
-class RenderFont:
+class RenderText:
     def __init__(self, font_file: str, mlx_ctx: MlxContext,
                  font_scale: float) -> None:
         self._font_size = int(mlx_ctx.win_height * font_scale)
         self._font_images, self._char_widths = \
             self._load_font_images(font_file)
-        self._mlx_ctx = mlx_ctx
 
-    def put_text_to_image(self, text: str):
-        self._fb = FrameBuffer(
-            self._mlx_ctx, self._get_text_width(text),
-            self._font_height)
-        image = self._fb.get_array()
+    def put_text_to_image(self, text: str) -> NDArray[np.uint8]:
+        image = np.zeros(
+            (self._font_height, self._get_text_width(text), 4),
+            dtype=np.uint8)
 
         x_pos = 0
         for char in text:
-            self._fb.draw_blended_tile(image, self._font_images[char],
-                                       0, x_pos)
+            FrameBuffer.draw_blended_tile(image, self._font_images[char],
+                                          0, x_pos)
             x_pos += int(self._char_widths[char])
 
         return image
@@ -68,13 +66,12 @@ class RenderFont:
         for i in range(*_ASCII_RANGE):
             char = chr(i)
 
-            char_width = int(max(1, round(self.font.getlength(char))))
+            bbox = bboxes[char]
+            left_offset = bbox[0]
+            char_width = int(max(1, bbox[2] - left_offset))
 
             mask = Image.new("L", (char_width, font_max_height), 0)
             draw = ImageDraw.Draw(mask)
-
-            bbox = bboxes[char]
-            left_offset = bbox[0]
 
             x_pos = 0 - left_offset
 

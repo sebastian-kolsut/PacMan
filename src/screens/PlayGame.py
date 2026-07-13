@@ -1,8 +1,10 @@
 from src.models import Config, MlxContext
 from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
+from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
 
 from Xlib.display import Display  # type: ignore[import-untyped]
+import numpy as np
 
 
 _W, _A, _S, _D = 119, 97, 115, 100
@@ -21,6 +23,7 @@ class PlayGame:
         cell_size = self._render_maze.get_cell_size()
         self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config.pacgum)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
+        self.hud = HUD(config, mlx_ctx)
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         self._last_pressed_key = 0
 
@@ -38,26 +41,29 @@ class PlayGame:
                 return key
         return 0
 
-    def update(self, difference: float) -> None:
-        self._pac_man.update(difference, self._get_pressed_direction())
+    def update(self, delta_time: float) -> None:
+        self._pac_man.update(delta_time, self._get_pressed_direction())
+        self.hud.update(delta_time)
 
     def render(self) -> None:
         maze_img = self._render_maze.render()
         pac_img = self._pac_man.render()
 
         pixels = self._fb.get_array()
-        pixels[:, :] = [0, 0, 0, 0]
+        pixels[:, :] = np.array([0, 0, 0, 255])
+        # self._mlx_ctx.m.mlx_clear_window(self._mlx_ctx.mlx_ptr,
+        #                                  self._mlx_ctx.win_ptr)
 
         maze_x = self._render_maze.get_maze_position()
 
-        self._fb.draw_blended_tile(pixels, maze_img, 0,
-                                   maze_x)
+        pixels[:990, maze_x:maze_x+990, :3] = maze_img[:, :, :3]
         self._pacgums.draw_pacgums_to_image(pixels, maze_x)
         self._fb.draw_blended_tile(
             pixels, pac_img,
             int(self._pac_man._pos_y) + self._pac_man._offset,
             int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
             )
+        self.hud.render(pixels)
 
         self._fb.commit()
         self._fb.put_image_to_window()

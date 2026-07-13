@@ -48,12 +48,14 @@ class FrameBuffer:
 
         alpha = tile[:, :, 3:4].astype(np.float32) / 255.0
         background = pixels[y0:y1, x0:x1, :3].astype(np.float32)
+        background_alpha = pixels[y0:y1, x0:x1, 3:4].astype(np.float32) / 255.0
         foreground = tile[:, :, :3].astype(np.float32)
 
         blended = foreground * alpha + background * (1.0 - alpha)
+        out_alpha = alpha + background_alpha * (1.0 - alpha)
 
         pixels[y0:y1, x0:x1, :3] = blended.astype(np.uint8)
-        pixels[y0:y1, x0:x1, 3] = 255
+        pixels[y0:y1, x0:x1, 3:] = (out_alpha * 255.0).astype(np.uint8)
 
     def get_array(self) -> NDArray[np.uint8]:
         return self._frame[:, :self.width * self._bytes_per_pixel].reshape(

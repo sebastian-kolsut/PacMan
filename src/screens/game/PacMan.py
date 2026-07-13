@@ -53,9 +53,9 @@ class PacMan(Character):
         pixels[:, :] = [0, 0, 0, 0]
         self._fb.draw_blended_tile(
             pixels,
-            self._assets[self._direction][self._animation // 3], 0, 0)
+            self._assets[self._direction][self._animation // 5], 0, 0)
         self._animation += 1
-        if self._animation == 9:
+        if self._animation == 15:
             self._animation = 0
 
         return pixels
