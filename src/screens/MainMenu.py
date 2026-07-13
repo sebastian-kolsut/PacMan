@@ -21,6 +21,11 @@ _SELECTED_BUTTON_HEIGHT = 137
 
 _BUTTON_GAP = 8
 
+KEY_SPACE = 32
+KEY_ENTER = 65293
+KEY_UP = 65362
+KEY_DOWN = 65364
+
 
 class MainMenu:
     """Render and control the main menu screen."""
@@ -103,6 +108,17 @@ class MainMenu:
                 _SELECTED_BUTTON_HEIGHT,
             ),
         }
+
+    def handle_key(self, keycode: int) -> str | None:
+        if keycode == KEY_UP:
+            self.move_selection_up()
+            return None
+        if keycode == KEY_DOWN:
+            self.move_selection_down()
+            return None
+        if keycode in (KEY_ENTER, KEY_SPACE):
+            return self.get_selected_action()
+        return None
 
     def render(self) -> None:
         pixels = self._fb.get_array()
