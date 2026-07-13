@@ -1,5 +1,5 @@
 from src.models import Config, MlxContext
-from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
+from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, Ghost
 from src.screens.draw_utils import FrameBuffer
 
 from Xlib.display import Display  # type: ignore[import-untyped]
@@ -21,6 +21,18 @@ class PlayGame:
         cell_size = self._render_maze.get_cell_size()
         self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config.pacgum)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
+        self._ghosts = [
+            Ghost(cell_size, mlx_ctx, self._maze, "blinky", (0, 0)),
+            Ghost(cell_size, mlx_ctx, self._maze, "clyde", (self._maze.width - 1, 0)),
+            Ghost(cell_size, mlx_ctx, self._maze, "inky", (0, self._maze.height - 1)),
+            Ghost(
+                cell_size,
+                mlx_ctx,
+                self._maze,
+                "pinky",
+                (self._maze.width - 1, self._maze.height - 1),
+            ),
+        ]
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         self._last_pressed_key = 0
 
@@ -41,6 +53,9 @@ class PlayGame:
     def update(self, difference: float) -> None:
         self._pac_man.update(difference, self._get_pressed_direction())
 
+        for ghost in self._ghosts:
+            ghost.update(difference)
+
     def render(self) -> None:
         maze_img = self._render_maze.render()
         pac_img = self._pac_man.render()
@@ -57,6 +72,17 @@ class PlayGame:
             pixels, pac_img,
             int(self._pac_man._pos_y) + self._pac_man._offset,
             int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
+            )
+        
+        for ghost in self._ghosts:
+            ghost_img = ghost.render()
+            ghost_y, ghost_x = ghost.get_draw_position()
+
+            self._fb.draw_blended_tile(
+                pixels,
+                ghost_img,
+                ghost_y,
+                ghost_x + maze_x,
             )
 
         self._fb.commit()
