@@ -14,7 +14,7 @@ class Pacgums:
     def __init__(self, cell_size: int, mlx_ctx: MlxContext,
                  maze: Maze, pacgum_amount: int) -> None:
         self._cell_size = cell_size
-        self._size = int(cell_size * 0.13)
+        self._size = int(cell_size * 0.18)
         self._fb = FrameBuffer(mlx_ctx, self._size, self._size)
         self._img = self._create_pacgum_image()
         self._offset = cell_size // 2 - self._size // 2
