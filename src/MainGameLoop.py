@@ -31,10 +31,12 @@ class MainGameLoop:
 
     def game_loop(self, param) -> int:
         now = time.time()
-        difference = now - self._state.last_frame_time
+        delta_time = now - self._state.last_frame_time
 
-        if difference < self._state.frame_interval:
-            time.sleep(difference)
+        if delta_time < self._state.frame_interval:
+            time.sleep(delta_time)
+        now = time.time()
+        delta_time = now - self._state.last_frame_time
         self._state.last_frame_time = time.time()
 
         # update() & render() for all
@@ -42,7 +44,7 @@ class MainGameLoop:
             case Screen.MAIN_MENU:
                 self._main_menu_screen.render()
             case Screen.GAME_PLAYING:
-                self._game_screen.update(difference)
+                self._game_screen.update(delta_time)
                 self._game_screen.render()
             case Screen.INSTRUCTIONS:
                 self._instructions_screen.render()

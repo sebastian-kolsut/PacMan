@@ -3,6 +3,7 @@ from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, Ghost
 from src.screens.draw_utils import FrameBuffer
 
 from Xlib.display import Display  # type: ignore[import-untyped]
+import numpy as np
 
 
 _W, _A, _S, _D = 119, 97, 115, 100
@@ -19,7 +20,9 @@ class PlayGame:
         self._maze = Maze(config)
         self._render_maze = RenderMaze(mlx_ctx, self._maze)
         cell_size = self._render_maze.get_cell_size()
-        self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config.pacgum)
+        self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config.pacgum,
+                                config.points_per_pacgum)
+        self._hud = HUD(config, mlx_ctx)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
             Ghost(cell_size, mlx_ctx, self._maze, "blinky", (0, 0)),
@@ -50,8 +53,9 @@ class PlayGame:
                 return key
         return 0
 
-    def update(self, difference: float) -> None:
-        self._pac_man.update(difference, self._get_pressed_direction())
+    def update(self, delta_time: float) -> None:
+        self._pac_man.update(delta_time, self._get_pressed_direction())
+        self._hud.update(delta_time, self._pac_man.get_new_points())
 
         for ghost in self._ghosts:
             ghost.update(difference)
@@ -61,18 +65,19 @@ class PlayGame:
         pac_img = self._pac_man.render()
 
         pixels = self._fb.get_array()
-        pixels[:, :] = [0, 0, 0, 0]
+        pixels[:, :] = np.array([0, 0, 0, 255])
 
         maze_x = self._render_maze.get_maze_position()
 
-        self._fb.draw_blended_tile(pixels, maze_img, 0,
-                                   maze_x)
+        pixels[:maze_img.shape[0], maze_x:maze_x+maze_img.shape[1], :3] = \
+            maze_img[:, :, :3]
         self._pacgums.draw_pacgums_to_image(pixels, maze_x)
         self._fb.draw_blended_tile(
             pixels, pac_img,
             int(self._pac_man._pos_y) + self._pac_man._offset,
             int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
             )
+        self._hud.render(pixels)
         
         for ghost in self._ghosts:
             ghost_img = ghost.render()

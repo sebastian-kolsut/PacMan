@@ -53,12 +53,15 @@ class PacMan(Character):
         pixels[:, :] = [0, 0, 0, 0]
         self._fb.draw_blended_tile(
             pixels,
-            self._assets[self._direction][self._animation // 3], 0, 0)
+            self._assets[self._direction][self._animation // 5], 0, 0)
         self._animation += 1
-        if self._animation == 9:
+        if self._animation == 15:
             self._animation = 0
 
         return pixels
+
+    def get_new_points(self) -> int:
+        return self._points
 
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:
@@ -68,7 +71,7 @@ class PacMan(Character):
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)
 
         cell_idx = self._get_cell_idx(next_pac_x, next_pac_y)
-        self._pacgums._eat_pacgum_if_there(cell_idx)
+        self._points = self._pacgums._eat_pacgum_if_there(cell_idx)
 
         if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
             dir = self._direction

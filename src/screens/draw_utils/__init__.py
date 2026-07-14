@@ -1,5 +1,5 @@
 from .FrameBuffer import FrameBuffer
-from .RenderFont import RenderFont
+from .RenderText import RenderText
 
 
-__all__ = ["FrameBuffer", "RenderFont"]
+__all__ = ["FrameBuffer", "RenderText"]
