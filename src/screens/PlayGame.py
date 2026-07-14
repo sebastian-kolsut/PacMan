@@ -1,5 +1,6 @@
 from src.models import Config, MlxContext
 from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, Ghost
+from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
 
 from Xlib.display import Display  # type: ignore[import-untyped]
@@ -58,7 +59,7 @@ class PlayGame:
         self._hud.update(delta_time, self._pac_man.get_new_points())
 
         for ghost in self._ghosts:
-            ghost.update(difference)
+            ghost.update(delta_time)
 
     def render(self) -> None:
         maze_img = self._render_maze.render()
