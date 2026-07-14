@@ -13,10 +13,6 @@ _KEY_PRESS_EVENT = 2
 _KEY_RELEASE_EVENT = 3
 
 KEY_ESCAPE = 65307
-KEY_SPACE = 32
-KEY_ENTER = 65293
-KEY_UP = 65362
-KEY_DOWN = 65364
 
 
 class MainGameLoop:
@@ -66,22 +62,14 @@ class MainGameLoop:
             return 0
 
         if self._state.screen == Screen.MAIN_MENU:
-            self._handle_main_menu_key(keycode)
+            action = self._main_menu_screen.handle_key(keycode)
+            if action is not None:
+                self._activate_main_menu_action(action)
             return 0
 
         return 0
 
-    def _handle_main_menu_key(self, keycode: int) -> None:
-        if keycode == KEY_UP:
-            self._main_menu_screen.move_selection_up()
-        elif keycode == KEY_DOWN:
-            self._main_menu_screen.move_selection_down()
-        elif keycode in (KEY_ENTER, KEY_SPACE):
-            self._activate_main_menu_action()
-
-    def _activate_main_menu_action(self) -> None:
-        action = self._main_menu_screen.get_selected_action()
-
+    def _activate_main_menu_action(self, action: str) -> None:
         if action == "start":
             self._state.screen = Screen.GAME_PLAYING
         elif action == "exit":
