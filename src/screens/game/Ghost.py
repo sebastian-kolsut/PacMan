@@ -1,5 +1,6 @@
+from collections import deque
 from random import choice, shuffle
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from numpy.typing import NDArray
 
@@ -12,8 +13,6 @@ from src.screens.game.Maze import Maze
 _GHOST_ASSETS = {
     "blinky": "assets/ghosts/blinky.png",
     "clyde": "assets/ghosts/clyde.png",
-    "inky": "assets/ghosts/inky.png",
-    "pinky": "assets/ghosts/pinky.png",
 }
 
 _DIRECTIONS = [
@@ -25,6 +24,7 @@ _DIRECTIONS = [
 
 
 class Ghost(Character):
+
     def __init__(
         self,
         cell_size: int,
@@ -32,9 +32,11 @@ class Ghost(Character):
         maze: Maze,
         asset_name: str,
         start_cell: Tuple[int, int],
+        behavior: str,
     ) -> None:
         super().__init__(cell_size, mlx_ctx, maze)
 
+        self._behavior = behavior
         self._asset = self._fb.get_image_array(
             _GHOST_ASSETS[asset_name],
             self._character_size,
@@ -49,16 +51,19 @@ class Ghost(Character):
         self._direction = self._get_random_valid_direction()
         self._pending_direction = self._direction
 
-    def update(self, delta_time: float) -> None:
+    def update(self, delta_time: float, pacman_cell: Tuple[int, int]) -> None:
         if self._is_close_to_cell_center():
-            self._snap_to_cell()
+            self._snap_to_cell()  # round cell
 
             valid_directions = self._get_valid_directions()
             if not valid_directions:
                 return
 
-            if self._direction not in valid_directions or choice([0, 1, 2]) == 0:
-                self._pending_direction = choice(valid_directions)
+            if self._behavior == "chase":
+                self._pending_direction = self._choose_direction(pacman_cell)
+            elif self._direction not in valid_directions or choice(
+                                                            [0, 1, 2]) == 0:
+                self._pending_direction = self._choose_direction(pacman_cell)
 
         self._try_turn(delta_time)
 
@@ -68,7 +73,7 @@ class Ghost(Character):
             self._snap_to_cell()
             valid_directions = self._get_valid_directions()
             if valid_directions:
-                self._direction = choice(valid_directions)
+                self._direction = self._choose_direction(pacman_cell)
                 self._pending_direction = self._direction
             return
 
@@ -93,6 +98,85 @@ class Ghost(Character):
             int(self._pos_y) + self._offset,
             int(self._pos_x) + self._offset,
         )
+
+    def _choose_direction(self, pacman_cell: Tuple[int, int]) -> Direction:
+        valid_directions = self._get_valid_directions()
+
+        if not valid_directions:
+            return self._direction
+
+        if self._behavior == "chase":
+            return self._choose_bfs_direction(pacman_cell)
+
+        return choice(self._get_valid_directions_without_reverse())
+
+    def _choose_bfs_direction(self, target_cell: Tuple[int, int]) -> Direction:
+        start_cell = self._get_current_cell()
+        path = self._find_path(start_cell, target_cell)
+
+        if len(path) < 2:
+            valid_directions = self._get_valid_directions()
+            if self._direction in valid_directions:
+                return self._direction
+            if valid_directions:
+                return choice(valid_directions)
+            return self._direction
+
+        next_cell = path[1]
+        return self._direction_to_cell(start_cell, next_cell)
+
+    def _find_path(
+        self,
+        start_cell: Tuple[int, int],
+        target_cell: Tuple[int, int],
+    ) -> List[Tuple[int, int]]:
+        queue = deque([start_cell])
+        came_from: Dict[Tuple[int, int], Tuple[int, int] | None] = {
+            start_cell: None,
+        }
+
+        while queue:
+            current_cell = queue.popleft()
+
+            if current_cell == target_cell:
+                break
+
+            for next_cell in self._get_neighbor_cells(current_cell):
+                if next_cell not in came_from:
+                    came_from[next_cell] = current_cell
+                    queue.append(next_cell)
+
+        if target_cell not in came_from:
+            return []
+
+        path = []
+        current: Tuple[int, int] | None = target_cell
+
+        while current is not None:
+            path.append(current)
+            current = came_from[current]
+
+        path.reverse()
+        return path
+
+    def _get_neighbor_cells(
+        self,
+        cell: Tuple[int, int],
+    ) -> List[Tuple[int, int]]:
+        cell_x, cell_y = cell
+        neighbors = []
+
+        for direction in _DIRECTIONS:
+            if self._can_move_from_cell(cell_x, cell_y, direction):
+                neighbors.append(
+                    self._get_next_cell_from_direction(
+                        cell_x,
+                        cell_y,
+                        direction,
+                    )
+                )
+
+        return neighbors
 
     def _is_close_to_cell_center(self) -> bool:
         tolerance = max(2.0, self._speed / 60.0)
@@ -141,17 +225,11 @@ class Ghost(Character):
         cell_y: int,
         direction: Direction,
     ) -> bool:
-        next_x = cell_x
-        next_y = cell_y
-
-        if direction == Direction.UP:
-            next_y -= 1
-        elif direction == Direction.RIGHT:
-            next_x += 1
-        elif direction == Direction.DOWN:
-            next_y += 1
-        elif direction == Direction.LEFT:
-            next_x -= 1
+        next_x, next_y = self._get_next_cell_from_direction(
+            cell_x,
+            cell_y,
+            direction,
+        )
 
         if (
             next_x < 0
@@ -164,13 +242,50 @@ class Ghost(Character):
         cell_idx = cell_y * self._maze.width + cell_x
         return not self._maze.is_wall_direction(cell_idx, direction)
 
+    def _get_next_cell_from_direction(
+        self,
+        cell_x: int,
+        cell_y: int,
+        direction: Direction,
+    ) -> Tuple[int, int]:
+        if direction == Direction.UP:
+            return cell_x, cell_y - 1
+        if direction == Direction.RIGHT:
+            return cell_x + 1, cell_y
+        if direction == Direction.DOWN:
+            return cell_x, cell_y + 1
+        if direction == Direction.LEFT:
+            return cell_x - 1, cell_y
+
+        return cell_x, cell_y
+
+    def _direction_to_cell(
+        self,
+        current_cell: Tuple[int, int],
+        next_cell: Tuple[int, int],
+    ) -> Direction:
+        current_x, current_y = current_cell
+        next_x, next_y = next_cell
+
+        if next_y < current_y:
+            return Direction.UP
+        if next_x > current_x:
+            return Direction.RIGHT
+        if next_y > current_y:
+            return Direction.DOWN
+        if next_x < current_x:
+            return Direction.LEFT
+
+        return self._direction
+
     def _get_random_valid_direction(self) -> Direction:
         valid_directions = self._get_valid_directions()
         if valid_directions:
             return choice(valid_directions)
         return Direction.RIGHT
 
-    def _find_valid_spawn(self, start_cell: Tuple[int, int]) -> Tuple[int, int]:
+    def _find_valid_spawn(
+            self, start_cell: Tuple[int, int]) -> Tuple[int, int]:
         start_x, start_y = start_cell
 
         candidates = [
@@ -205,3 +320,34 @@ class Ghost(Character):
             self._can_move_from_cell(cell_x, cell_y, direction)
             for direction in _DIRECTIONS
         )
+
+    def _get_opposite_direction(self, direction: Direction) -> Direction:
+        if direction == Direction.UP:
+            return Direction.DOWN
+        if direction == Direction.DOWN:
+            return Direction.UP
+        if direction == Direction.LEFT:
+            return Direction.RIGHT
+        if direction == Direction.RIGHT:
+            return Direction.LEFT
+
+        return direction
+
+    def _get_valid_directions_without_reverse(self) -> List[Direction]:
+        valid_directions = self._get_valid_directions()
+
+        if len(valid_directions) <= 1:
+            return valid_directions
+
+        opposite = self._get_opposite_direction(self._direction)
+
+        filtered = [
+            direction
+            for direction in valid_directions
+            if direction != opposite
+        ]
+
+        if filtered:
+            return filtered
+
+        return valid_directions

@@ -34,10 +34,11 @@ class MainGameLoop:
         delta_time = now - self._state.last_frame_time
 
         if delta_time < self._state.frame_interval:
-            time.sleep(delta_time)
+            time.sleep(self._state.frame_interval - delta_time)
         now = time.time()
         delta_time = now - self._state.last_frame_time
         self._state.last_frame_time = time.time()
+        delta_time = min(delta_time, 1 / 30)
 
         # update() & render() for all
         match self._state.screen:
