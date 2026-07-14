@@ -24,7 +24,7 @@ class GameState:
 
     screen: Screen = Screen.MAIN_MENU
     last_frame_time: float = field(default_factory=time.time)
-    frame_interval: float = 1 / 100000
+    frame_interval: float = 1 / 120
 
 
 @dataclass

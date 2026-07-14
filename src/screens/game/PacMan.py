@@ -60,6 +60,9 @@ class PacMan(Character):
 
         return pixels
 
+    def get_new_points(self) -> int:
+        return self._points
+
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:
             self._pending_direction = _DIRETCIONS[keycode]
@@ -68,7 +71,7 @@ class PacMan(Character):
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)
 
         cell_idx = self._get_cell_idx(next_pac_x, next_pac_y)
-        self._pacgums._eat_pacgum_if_there(cell_idx)
+        self._points = self._pacgums._eat_pacgum_if_there(cell_idx)
 
         if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
             dir = self._direction

@@ -12,7 +12,8 @@ _KINDA_YELLOW = (71, 167, 222, 255)
 
 class Pacgums:
     def __init__(self, cell_size: int, mlx_ctx: MlxContext,
-                 maze: Maze, pacgum_amount: int) -> None:
+                 maze: Maze, pacgum_amount: int, points_per_pacgum: int
+                 ) -> None:
         self._cell_size = cell_size
         self._size = int(cell_size * 0.13)
         self._fb = FrameBuffer(mlx_ctx, self._size, self._size)
@@ -20,19 +21,23 @@ class Pacgums:
         self._offset = cell_size // 2 - self._size // 2
         self._maze = maze
         self._layout = self._create_pacgum_layout(maze, pacgum_amount)
+        self._points_per_pacgum = points_per_pacgum
 
     def draw_pacgums_to_image(self, image: NDArray[np.uint8],
                               maze_pos_x: int) -> None:
         for i in range(self._maze.width * self._maze.height):
             if (self._layout & (1 << i)) != 0:
-                x = (i % self._maze.width)
-                y = i // self._maze.width
-                x, y = self._get_pacgum_position(x, y)
-                self._fb.draw_blended_tile(image, self._img, y, x + maze_pos_x)
+                x0 = (i % self._maze.width)
+                y0 = i // self._maze.width
+                x0, y0 = self._get_pacgum_position(x0, y0)
+                x1, y1 = x0 + self._size + maze_pos_x, y0 + self._size
+                image[y0:y1, x0 + maze_pos_x:x1] = self._img
 
-    def _eat_pacgum_if_there(self, idx: int) -> None:
+    def _eat_pacgum_if_there(self, idx: int) -> int:
         if (self._layout & (1 << idx)) != 0:
             self._layout &= ~(1 << idx)
+            return self._points_per_pacgum
+        return 0
 
     def _get_pacgum_position(self, x: int, y: int) -> Tuple[int, int]:
         return x * self._cell_size + self._offset, \
@@ -53,7 +58,7 @@ class Pacgums:
 
     def _create_pacgum_image(self) -> NDArray[np.uint8]:
         pacgum_img = self._fb.get_array()
-        pacgum_img[:, :] = [0, 0, 0, 0]
+        pacgum_img[:, :] = [0, 0, 0, 255]
         center = self._size // 2
 
         h, w = pacgum_img.shape[:2]

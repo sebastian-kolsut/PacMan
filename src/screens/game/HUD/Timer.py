@@ -5,17 +5,16 @@ from numpy.typing import NDArray
 import numpy as np
 
 
-_FONT_FILEPATH = "assets/fonts/gomarice_no_continue.ttf"
-_FONT_SIZE = 0.05
-
 _FPS_UPDATE_INTERVAL = 1.0
 
 
 class Timer:
     def __init__(self, time_for_level: float, mlx_ctx: MlxContext) -> None:
+        from .HUD import FONT_FILEPATH, FONT_SIZE
+
         self._time_left = time_for_level
         self._time_str = self._format_time()
-        self._render_txt = RenderText(_FONT_FILEPATH, mlx_ctx, _FONT_SIZE)
+        self._render_txt = RenderText(FONT_FILEPATH, mlx_ctx, FONT_SIZE)
         self._image = self._render_txt.put_text_to_image(self._time_str)
         self.fps = self._render_txt.put_text_to_image("0.00FPS")
         self._fps_timer = 0.0
