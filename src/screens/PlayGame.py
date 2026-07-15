@@ -26,15 +26,14 @@ class PlayGame:
         self._hud = HUD(config, mlx_ctx)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
-            Ghost(cell_size, mlx_ctx, self._maze, "blinky", (0, 0)),
-            Ghost(cell_size, mlx_ctx, self._maze, "clyde", (self._maze.width - 1, 0)),
-            Ghost(cell_size, mlx_ctx, self._maze, "inky", (0, self._maze.height - 1)),
+            Ghost(cell_size, mlx_ctx, self._maze, "blinky", (0, 0), "chase"),
             Ghost(
                 cell_size,
                 mlx_ctx,
                 self._maze,
-                "pinky",
-                (self._maze.width - 1, self._maze.height - 1),
+                "clyde",
+                (self._maze.width - 1, 0),
+                "random",
             ),
         ]
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
@@ -58,8 +57,10 @@ class PlayGame:
         self._pac_man.update(delta_time, self._get_pressed_direction())
         self._hud.update(delta_time, self._pac_man.get_new_points())
 
+        pacman_cell = self._pac_man.get_cell_position()
+
         for ghost in self._ghosts:
-            ghost.update(delta_time)
+            ghost.update(delta_time, pacman_cell)
 
     def render(self) -> None:
         maze_img = self._render_maze.render()

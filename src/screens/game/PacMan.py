@@ -34,6 +34,7 @@ class PacMan(Character):
         super().__init__(cell_size, mlx_ctx, maze)
         self._pacgums = pacgums
         self._animation = 0
+        self._points = 0
 
         self._assets = {
             Direction.UP: self._load_assets(self._character_size, _UP_FOLDER),
@@ -62,6 +63,15 @@ class PacMan(Character):
 
     def get_new_points(self) -> int:
         return self._points
+
+    def get_cell_position(self) -> tuple[int, int]:
+        cell_x = int(round(self._pos_x / self._cell_size))
+        cell_y = int(round(self._pos_y / self._cell_size))
+
+        cell_x = max(0, min(cell_x, self._maze.width - 1))
+        cell_y = max(0, min(cell_y, self._maze.height - 1))
+
+        return cell_x, cell_y
 
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:
