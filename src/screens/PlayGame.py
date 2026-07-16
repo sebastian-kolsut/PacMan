@@ -1,5 +1,6 @@
 from src.models import Config, MlxContext
-from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, Ghost
+from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
+from src.screens.game.ghosts import Blinky, Clyde
 from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
 
@@ -26,14 +27,12 @@ class PlayGame:
         self._hud = HUD(config, mlx_ctx)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
-            Ghost(cell_size, mlx_ctx, self._maze, "blinky", (0, 0), "chase"),
-            Ghost(
+            Blinky(cell_size, mlx_ctx, self._maze, (0, 0)),
+            Clyde(
                 cell_size,
                 mlx_ctx,
                 self._maze,
-                "clyde",
                 (self._maze.width - 1, 0),
-                "random",
             ),
         ]
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
@@ -58,9 +57,10 @@ class PlayGame:
         self._hud.update(delta_time, self._pac_man.get_new_points())
 
         pacman_cell = self._pac_man.get_cell_position()
+        pacman_direction = self._pac_man.get_direction()
 
         for ghost in self._ghosts:
-            ghost.update(delta_time, pacman_cell)
+            ghost.update(delta_time, pacman_cell, pacman_direction)
 
     def render(self) -> None:
         maze_img = self._render_maze.render()

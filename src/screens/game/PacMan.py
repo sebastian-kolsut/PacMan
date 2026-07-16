@@ -65,13 +65,10 @@ class PacMan(Character):
         return self._points
 
     def get_cell_position(self) -> tuple[int, int]:
-        cell_x = int(round(self._pos_x / self._cell_size))
-        cell_y = int(round(self._pos_y / self._cell_size))
+        return self._get_current_cell()
 
-        cell_x = max(0, min(cell_x, self._maze.width - 1))
-        cell_y = max(0, min(cell_y, self._maze.height - 1))
-
-        return cell_x, cell_y
+    def get_direction(self) -> Direction:
+        return self._direction
 
     def _move_pac_man(self, keycode: int, delta_time: float):
         if keycode != 0:

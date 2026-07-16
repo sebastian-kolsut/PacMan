@@ -1,5 +1,5 @@
 from collections import deque
-from random import choice, shuffle
+from random import choice
 from typing import Dict, List, Tuple
 
 from numpy.typing import NDArray
@@ -11,7 +11,7 @@ from src.screens.game.Maze import Maze
 
 
 _GHOST_ASSETS = {
-    "blinky": "assets/ghosts/blinky.png",
+    "blinky": "assets/ghosts/blinky2.png",
     "clyde": "assets/ghosts/clyde.png",
 }
 
@@ -23,6 +23,11 @@ _DIRECTIONS = [
 ]
 
 
+_DEFAULT_SPEED_MULTIPLIER = 2.0
+_MIN_SPEED_MULTIPLIER = 0.5
+_MAX_SPEED_MULTIPLIER = 5.0
+
+
 class Ghost(Character):
 
     def __init__(
@@ -32,26 +37,33 @@ class Ghost(Character):
         maze: Maze,
         asset_name: str,
         start_cell: Tuple[int, int],
-        behavior: str,
+        speed_multiplier: float = _DEFAULT_SPEED_MULTIPLIER,
     ) -> None:
         super().__init__(cell_size, mlx_ctx, maze)
 
-        self._behavior = behavior
         self._asset = self._fb.get_image_array(
             _GHOST_ASSETS[asset_name],
             self._character_size,
             self._character_size,
         )
 
-        start_x, start_y = self._find_valid_spawn(start_cell)
+        start_x, start_y = start_cell
+        start_x = max(0, min(start_x, self._maze.width - 1))
+        start_y = max(0, min(start_y, self._maze.height - 1))
+
         self._pos_x = float(start_x * self._cell_size)
         self._pos_y = float(start_y * self._cell_size)
 
-        self._speed = self._cell_size * 2.0
+        self.set_speed_multiplier(speed_multiplier)
         self._direction = self._get_random_valid_direction()
         self._pending_direction = self._direction
 
-    def update(self, delta_time: float, pacman_cell: Tuple[int, int]) -> None:
+    def update(
+        self,
+        delta_time: float,
+        pacman_cell: Tuple[int, int],
+        pacman_direction: Direction,
+    ) -> None:
         if self._is_close_to_cell_center():
             self._snap_to_cell()  # round cell
 
@@ -59,11 +71,15 @@ class Ghost(Character):
             if not valid_directions:
                 return
 
-            if self._behavior == "chase":
-                self._pending_direction = self._choose_direction(pacman_cell)
-            elif self._direction not in valid_directions or choice(
-                                                            [0, 1, 2]) == 0:
-                self._pending_direction = self._choose_direction(pacman_cell)
+            if (
+                self._should_recalculate_direction()
+                or self._direction not in valid_directions
+                or choice([0, 1, 2]) == 0
+            ):
+                self._pending_direction = self._choose_direction(
+                    pacman_cell,
+                    pacman_direction,
+                )
 
         self._try_turn(delta_time)
 
@@ -73,12 +89,18 @@ class Ghost(Character):
             self._snap_to_cell()
             valid_directions = self._get_valid_directions()
             if valid_directions:
-                self._direction = self._choose_direction(pacman_cell)
+                self._direction = self._choose_direction(
+                    pacman_cell,
+                    pacman_direction,
+                )
                 self._pending_direction = self._direction
             return
 
         self._pos_x = next_x
         self._pos_y = next_y
+
+    def _should_recalculate_direction(self) -> bool:
+        return False
 
     def render(self) -> NDArray:
         pixels = self._fb.get_array()
@@ -99,16 +121,21 @@ class Ghost(Character):
             int(self._pos_x) + self._offset,
         )
 
-    def _choose_direction(self, pacman_cell: Tuple[int, int]) -> Direction:
+    def _choose_direction(
+        self,
+        pacman_cell: Tuple[int, int],
+        pacman_direction: Direction,
+    ) -> Direction:
+        valid_directions = self._get_valid_directions_without_reverse()
+
+        if valid_directions:
+            return choice(valid_directions)
+
         valid_directions = self._get_valid_directions()
+        if valid_directions:
+            return choice(valid_directions)
 
-        if not valid_directions:
-            return self._direction
-
-        if self._behavior == "chase":
-            return self._choose_bfs_direction(pacman_cell)
-
-        return choice(self._get_valid_directions_without_reverse())
+        return self._direction
 
     def _choose_bfs_direction(self, target_cell: Tuple[int, int]) -> Direction:
         start_cell = self._get_current_cell()
@@ -177,37 +204,6 @@ class Ghost(Character):
                 )
 
         return neighbors
-
-    def _is_close_to_cell_center(self) -> bool:
-        tolerance = max(2.0, self._speed / 60.0)
-
-        x_remainder = self._pos_x % self._cell_size
-        y_remainder = self._pos_y % self._cell_size
-
-        return (
-            x_remainder <= tolerance
-            or self._cell_size - x_remainder <= tolerance
-        ) and (
-            y_remainder <= tolerance
-            or self._cell_size - y_remainder <= tolerance
-        )
-
-    def _snap_to_cell(self) -> None:
-        self._pos_x = float(
-            round(self._pos_x / self._cell_size) * self._cell_size
-        )
-        self._pos_y = float(
-            round(self._pos_y / self._cell_size) * self._cell_size
-        )
-
-    def _get_current_cell(self) -> Tuple[int, int]:
-        cell_x = int(round(self._pos_x / self._cell_size))
-        cell_y = int(round(self._pos_y / self._cell_size))
-
-        cell_x = max(0, min(cell_x, self._maze.width - 1))
-        cell_y = max(0, min(cell_y, self._maze.height - 1))
-
-        return cell_x, cell_y
 
     def _get_valid_directions(self) -> List[Direction]:
         cell_x, cell_y = self._get_current_cell()
@@ -284,43 +280,6 @@ class Ghost(Character):
             return choice(valid_directions)
         return Direction.RIGHT
 
-    def _find_valid_spawn(
-            self, start_cell: Tuple[int, int]) -> Tuple[int, int]:
-        start_x, start_y = start_cell
-
-        candidates = [
-            (start_x, start_y),
-            (start_x + 1, start_y),
-            (start_x, start_y + 1),
-            (start_x - 1, start_y),
-            (start_x, start_y - 1),
-            (start_x + 1, start_y + 1),
-            (start_x - 1, start_y + 1),
-            (start_x + 1, start_y - 1),
-            (start_x - 1, start_y - 1),
-        ]
-
-        shuffle(candidates)
-
-        for cell_x, cell_y in candidates:
-            if (
-                0 <= cell_x < self._maze.width
-                and 0 <= cell_y < self._maze.height
-                and self._cell_has_exit(cell_x, cell_y)
-            ):
-                return cell_x, cell_y
-
-        return max(0, min(start_x, self._maze.width - 1)), max(
-            0,
-            min(start_y, self._maze.height - 1),
-        )
-
-    def _cell_has_exit(self, cell_x: int, cell_y: int) -> bool:
-        return any(
-            self._can_move_from_cell(cell_x, cell_y, direction)
-            for direction in _DIRECTIONS
-        )
-
     def _get_opposite_direction(self, direction: Direction) -> Direction:
         if direction == Direction.UP:
             return Direction.DOWN
@@ -351,3 +310,13 @@ class Ghost(Character):
             return filtered
 
         return valid_directions
+
+    def set_speed_multiplier(self, speed_multiplier: float) -> None:
+        speed_multiplier = max(
+            _MIN_SPEED_MULTIPLIER,
+            min(speed_multiplier, _MAX_SPEED_MULTIPLIER),
+        )
+        self._speed = self._cell_size * speed_multiplier
+
+    def get_speed_multiplier(self) -> float:
+        return self._speed / self._cell_size
