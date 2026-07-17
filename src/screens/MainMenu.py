@@ -16,9 +16,6 @@ _TITLE_HEIGHT = 415
 _BUTTON_WIDTH = 660
 _BUTTON_HEIGHT = 120
 
-_SELECTED_BUTTON_WIDTH = 680
-_SELECTED_BUTTON_HEIGHT = 125
-
 _BUTTON_GAP = 8
 
 KEY_SPACE = 32
@@ -46,66 +43,74 @@ class MainMenu:
             "settings",
             "exit",
         ]
+        (
+            self._title_width,
+            self._title_height,
+            self._button_width,
+            self._button_height,
+            self._selected_button_width,
+            self._selected_button_height,
+        ) = self._calculate_asset_sizes()
 
         self._title = FrameBuffer.get_image_array(
             str(_ASSETS_DIR / "title.png"),
-            _TITLE_WIDTH,
-            _TITLE_HEIGHT,
+            self._title_width,
+            self._title_height,
         )
 
         self._buttons = {
             "start": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "start_button.png"),
-                _BUTTON_WIDTH,
-                _BUTTON_HEIGHT,
+                self._button_width,
+                self._button_height,
             ),
             "instructions": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "instructions_button.png"),
-                _BUTTON_WIDTH,
-                _BUTTON_HEIGHT,
+                self._button_width,
+                self._button_height,
             ),
             "highscores": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "highscores_button.png"),
-                _BUTTON_WIDTH,
-                _BUTTON_HEIGHT,
+                self._button_width,
+                self._button_height,
             ),
             "settings": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "settings_button.png"),
-                _BUTTON_WIDTH,
-                _BUTTON_HEIGHT,
+                self._button_width,
+                self._button_height,
             ),
             "exit": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "exit_button.png"),
-                _BUTTON_WIDTH,
-                _BUTTON_HEIGHT,
+                self._button_width,
+                self._button_height,
             ),
         }
 
         self._selected_buttons = {
             "start": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "start_button.png"),
-                _SELECTED_BUTTON_WIDTH,
-                _SELECTED_BUTTON_HEIGHT,
+                self._selected_button_width,
+                self._selected_button_height,
             ),
             "instructions": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "instructions_button.png"),
-                _SELECTED_BUTTON_WIDTH,
-                _SELECTED_BUTTON_HEIGHT,
+                self._selected_button_width,
+                self._selected_button_height,
             ),
             "highscores": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "highscores_button.png"),
-                _SELECTED_BUTTON_WIDTH,
-                _SELECTED_BUTTON_HEIGHT,
+                self._selected_button_width,
+                self._selected_button_height,
             ),
             "settings": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "settings_button.png"),
-                _SELECTED_BUTTON_WIDTH,
-                _SELECTED_BUTTON_HEIGHT,
+                self._selected_button_width,
+                self._selected_button_height,
             ),
             "exit": FrameBuffer.get_image_array(
                 str(_ASSETS_DIR / "exit_button.png"),
-                _SELECTED_BUTTON_WIDTH,
-                _SELECTED_BUTTON_HEIGHT,
+                self._selected_button_width,
+                self._selected_button_height,
             ),
         }
 
@@ -127,20 +132,24 @@ class MainMenu:
         center_x = self._mlx_ctx.win_width // 2
 
         menu_height = (
-            _TITLE_HEIGHT
+            self._title_height
             + 20
-            + len(self._actions) * _BUTTON_HEIGHT
+            + len(self._actions) * self._button_height
             + (len(self._actions) - 1) * _BUTTON_GAP
         )
-        title_y = max(50, (self._mlx_ctx.win_height - menu_height) // 2)
+        title_y = max(20, (self._mlx_ctx.win_height - menu_height) // 2)
 
-        first_button_y = title_y + _TITLE_HEIGHT + 20
+        first_button_y = title_y + self._title_height + 20
 
         self._draw_centered(self._title, center_x, title_y)
 
         for index, action in enumerate(self._actions):
-            y = first_button_y + index * (_BUTTON_HEIGHT + _BUTTON_GAP)
+            base_y = first_button_y + index * (
+                self._button_height + _BUTTON_GAP
+            )
             image = self._get_button_image(action, index)
+
+            y = base_y - (image.shape[0] - self._button_height) // 2
             self._draw_centered(image, center_x, y)
 
         self._fb.commit()
@@ -193,4 +202,44 @@ class MainMenu:
             image,
             y,
             x,
+        )
+
+    def _calculate_asset_sizes(self) -> tuple[int, int, int, int, int, int]:
+        window_width = self._mlx_ctx.win_width
+        window_height = self._mlx_ctx.win_height
+
+        title_width = int(window_width * 0.75)
+        title_height = int(title_width * _TITLE_HEIGHT / _TITLE_WIDTH)
+
+        button_width = int(window_width * 0.42)
+        button_height = int(button_width * _BUTTON_HEIGHT / _BUTTON_WIDTH)
+
+        selected_button_width = int(button_width * 1.03)
+        selected_button_height = int(button_height * 1.04)
+
+        max_menu_height = int(window_height * 0.90)
+        menu_height = (
+            title_height
+            + 20
+            + len(self._actions) * button_height
+            + (len(self._actions) - 1) * _BUTTON_GAP
+        )
+
+        if menu_height > max_menu_height:
+            scale = max_menu_height / menu_height
+
+            title_width = int(title_width * scale)
+            title_height = int(title_height * scale)
+            button_width = int(button_width * scale)
+            button_height = int(button_height * scale)
+            selected_button_width = int(selected_button_width * scale)
+            selected_button_height = int(selected_button_height * scale)
+
+        return (
+            title_width,
+            title_height,
+            button_width,
+            button_height,
+            selected_button_width,
+            selected_button_height,
         )

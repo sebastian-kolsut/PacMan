@@ -2,7 +2,15 @@ from .PacMan import PacMan
 from .Maze import Maze
 from .RenderMaze import RenderMaze
 from .Pacgums import Pacgums
-from .Ghost import Ghost
+from .ghosts import Ghost, Blinky, Clyde
 
 
-__all__ = ["PacMan", "Maze", "RenderMaze", "Pacgums", "Ghost"]
+__all__ = [
+    "PacMan",
+    "Maze",
+    "RenderMaze",
+    "Pacgums",
+    "Ghost",
+    "Blinky",
+    "Clyde",
+]

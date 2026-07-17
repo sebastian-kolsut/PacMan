@@ -3,7 +3,7 @@ from src.models.dataclasses import MlxContext
 from src.models import Direction
 from src.screens.draw_utils import FrameBuffer
 
-from typing import List
+from typing import List, Tuple
 from os import walk
 from numpy.typing import NDArray
 from abc import ABC, abstractmethod
@@ -71,6 +71,14 @@ class Character(ABC):
             cell_x = int(next_x // self._cell_size)
             cell_y = int(next_y // self._cell_size)
 
+        if (
+            cell_x < 0
+            or cell_x >= self._maze.width
+            or cell_y < 0
+            or cell_y >= self._maze.height
+        ):
+            return True
+
         cell_idx = cell_y * self._maze.width + cell_x
 
         return self._maze.is_wall_direction(cell_idx, direction)
@@ -82,6 +90,9 @@ class Character(ABC):
         else:
             cell_x = int(x // self._cell_size)
             cell_y = int(y // self._cell_size)
+
+        cell_x = max(0, min(cell_x, self._maze.width - 1))
+        cell_y = max(0, min(cell_y, self._maze.height - 1))
 
         return cell_y * self._maze.width + cell_x
 
@@ -105,3 +116,37 @@ class Character(ABC):
                                            pac_size, pac_size)
             imgs.append(img)
         return imgs
+
+    def _get_current_cell(self) -> Tuple[int, int]:
+
+        cell_x = int(round(self._pos_x / self._cell_size))
+        cell_y = int(round(self._pos_y / self._cell_size))
+
+        cell_x = max(0, min(cell_x, self._maze.width - 1))
+        cell_y = max(0, min(cell_y, self._maze.height - 1))
+
+        return cell_x, cell_y
+
+    def _snap_to_cell(self) -> None:
+
+        self._pos_x = float(
+            round(self._pos_x / self._cell_size) * self._cell_size
+        )
+        self._pos_y = float(
+            round(self._pos_y / self._cell_size) * self._cell_size
+        )
+
+    def _is_close_to_cell_center(self) -> bool:
+
+        tolerance = max(2.0, self._speed / 60.0)
+
+        x_remainder = self._pos_x % self._cell_size
+        y_remainder = self._pos_y % self._cell_size
+
+        return (
+            x_remainder <= tolerance
+            or self._cell_size - x_remainder <= tolerance
+        ) and (
+            y_remainder <= tolerance
+            or self._cell_size - y_remainder <= tolerance
+        )
