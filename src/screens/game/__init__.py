@@ -2,7 +2,7 @@ from .PacMan import PacMan
 from .Maze import Maze
 from .RenderMaze import RenderMaze
 from .Pacgums import Pacgums
-from .ghosts import Ghost, Blinky, Clyde
+from .ghosts import Ghost, Blinky, Clyde, Pinky, Inky
 
 
 __all__ = [
@@ -13,4 +13,6 @@ __all__ = [
     "Ghost",
     "Blinky",
     "Clyde",
+    "Pinky",
+    "Inky",
 ]

@@ -1,3 +1,4 @@
+from random import choice
 from typing import Optional, Tuple
 
 from src.models import Direction
@@ -6,8 +7,8 @@ from src.screens.game.ghosts.Ghost import Ghost
 from src.screens.game.Maze import Maze
 
 
-class Clyde(Ghost):
-    """Ghost that walks to random reachable cells."""
+class Inky(Ghost):
+    """Ghost that sometimes chases and sometimes roams."""
 
     def __init__(
         self,
@@ -20,11 +21,13 @@ class Clyde(Ghost):
             cell_size,
             mlx_ctx,
             maze,
-            "clyde",
+            "inky",
             start_cell,
-            speed_multiplier=1.7,
+            speed_multiplier=1.9,
         )
         self._target_cell: Optional[Tuple[int, int]] = None
+        self._mode = "roam"
+        self._steps_left = 0
 
     def _should_recalculate_direction(self) -> bool:
         return True
@@ -34,6 +37,18 @@ class Clyde(Ghost):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> Direction:
+        if self._steps_left <= 0:
+            self._mode = choice(["chase", "roam"])
+            self._steps_left = choice([4, 5, 6, 7])
+
+            if self._mode == "roam":
+                self._target_cell = self._get_random_reachable_cell()
+
+        self._steps_left -= 1
+
+        if self._mode == "chase":
+            return self._choose_bfs_direction(pacman_cell)
+
         current_cell = self._get_current_cell()
 
         if self._target_cell is None or current_cell == self._target_cell:

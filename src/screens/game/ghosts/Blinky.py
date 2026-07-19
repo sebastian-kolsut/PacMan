@@ -7,7 +7,7 @@ from src.screens.game.Maze import Maze
 
 
 class Blinky(Ghost):
-    """Ten czerwony"""
+    """Blinky chases Pac-Man directly."""
 
     def __init__(
         self,
