@@ -1,6 +1,6 @@
 from src.models import Config, MlxContext
 from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
-from src.screens.game.ghosts import Blinky, Clyde
+from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky
 from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
 
@@ -32,6 +32,18 @@ class PlayGame:
                 mlx_ctx,
                 self._maze,
                 (self._maze.width - 1, 0),
+            ),
+            Pinky(
+                cell_size,
+                mlx_ctx,
+                self._maze,
+                (self._maze.width - 1, self._maze.height - 1),
+            ),
+            Inky(
+                cell_size,
+                mlx_ctx,
+                self._maze,
+                (0, self._maze.height - 1),
             ),
         ]
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
@@ -91,6 +103,8 @@ class PlayGame:
                 ghost_y,
                 ghost_x + maze_x,
             )
+
+        self._hud.render(pixels)
 
         self._fb.commit()
         self._fb.put_image_to_window()
