@@ -13,6 +13,8 @@ from src.screens.game.Maze import Maze
 _GHOST_ASSETS = {
     "blinky": "assets/ghosts/blinky2.png",
     "clyde": "assets/ghosts/clyde.png",
+    "pinky": "assets/ghosts/pinky.png",
+    "inky": "assets/ghosts/inky.png",
 }
 
 _DIRECTIONS = [
@@ -74,7 +76,6 @@ class Ghost(Character):
             if (
                 self._should_recalculate_direction()
                 or self._direction not in valid_directions
-                or choice([0, 1, 2]) == 0
             ):
                 self._pending_direction = self._choose_direction(
                     pacman_cell,
@@ -126,12 +127,8 @@ class Ghost(Character):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> Direction:
-        valid_directions = self._get_valid_directions_without_reverse()
-
-        if valid_directions:
-            return choice(valid_directions)
-
         valid_directions = self._get_valid_directions()
+
         if valid_directions:
             return choice(valid_directions)
 
@@ -280,37 +277,6 @@ class Ghost(Character):
             return choice(valid_directions)
         return Direction.RIGHT
 
-    def _get_opposite_direction(self, direction: Direction) -> Direction:
-        if direction == Direction.UP:
-            return Direction.DOWN
-        if direction == Direction.DOWN:
-            return Direction.UP
-        if direction == Direction.LEFT:
-            return Direction.RIGHT
-        if direction == Direction.RIGHT:
-            return Direction.LEFT
-
-        return direction
-
-    def _get_valid_directions_without_reverse(self) -> List[Direction]:
-        valid_directions = self._get_valid_directions()
-
-        if len(valid_directions) <= 1:
-            return valid_directions
-
-        opposite = self._get_opposite_direction(self._direction)
-
-        filtered = [
-            direction
-            for direction in valid_directions
-            if direction != opposite
-        ]
-
-        if filtered:
-            return filtered
-
-        return valid_directions
-
     def set_speed_multiplier(self, speed_multiplier: float) -> None:
         speed_multiplier = max(
             _MIN_SPEED_MULTIPLIER,
@@ -320,3 +286,35 @@ class Ghost(Character):
 
     def get_speed_multiplier(self) -> float:
         return self._speed / self._cell_size
+
+    def _get_random_reachable_cell(self) -> Tuple[int, int]:
+        current_cell = self._get_current_cell()
+        reachable_cells = self._get_reachable_cells(current_cell)
+
+        if len(reachable_cells) <= 1:
+            return current_cell
+
+        reachable_cells = [
+            cell
+            for cell in reachable_cells
+            if cell != current_cell
+        ]
+
+        return choice(reachable_cells)
+
+    def _get_reachable_cells(
+        self,
+        start_cell: Tuple[int, int],
+    ) -> List[Tuple[int, int]]:
+        queue = deque([start_cell])
+        visited = {start_cell}
+
+        while queue:
+            current_cell = queue.popleft()
+
+            for next_cell in self._get_neighbor_cells(current_cell):
+                if next_cell not in visited:
+                    visited.add(next_cell)
+                    queue.append(next_cell)
+
+        return list(visited)
