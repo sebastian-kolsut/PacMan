@@ -35,6 +35,8 @@ class PacMan(Character):
         self._pacgums = pacgums
         self._animation = 0
         self._points = 0
+        self._pos_x = float((maze.width // 2) * cell_size)
+        self._pos_y = float((maze.height // 2) * cell_size)
 
         self._assets = {
             Direction.UP: self._load_assets(self._character_size, _UP_FOLDER),
@@ -81,14 +83,7 @@ class PacMan(Character):
         self._points = self._pacgums._eat_pacgum_if_there(cell_idx)
 
         if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
-            dir = self._direction
-            pen = self._pending_direction
-            self._pending_direction = Direction.UP
-            self._try_turn(delta_time)
-            self._pending_direction = Direction.RIGHT
-            self._try_turn(delta_time)
-            self._direction = dir
-            self._pending_direction = pen
+            self._snap_to_cell()
             return
 
         self._pos_x, self._pos_y = next_pac_x, next_pac_y
