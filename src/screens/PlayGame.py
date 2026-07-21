@@ -1,5 +1,6 @@
 from src.models import Config, MlxContext
-from src.screens.game import RenderMaze, Maze, PacMan, Pacgums
+from src.models.dataclasses import GameState
+from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, PauseScreen
 from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky
 from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
@@ -15,7 +16,8 @@ _DIRECTION_KEYS = (_W, _A, _S, _D,
 
 
 class PlayGame:
-    def __init__(self, mlx_ctx: MlxContext, config: Config) -> None:
+    def __init__(self, mlx_ctx: MlxContext, config: Config,
+                 game_state: GameState) -> None:
         self._mlx_ctx = mlx_ctx
         self._current_level = 0
         self._config = config
@@ -24,6 +26,7 @@ class PlayGame:
         cell_size = self._render_maze.get_cell_size()
         self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config)
         self._hud = HUD(config, mlx_ctx)
+        self._pause = PauseScreen(mlx_ctx, game_state)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
             Blinky(cell_size, mlx_ctx, self._maze, (0, 0)),
@@ -63,7 +66,13 @@ class PlayGame:
                 return key
         return 0
 
+    def handle_key(self, keycode: int) -> None:
+        self._pause.update(keycode)
+
     def update(self, delta_time: float) -> None:
+        if self._pause.is_game_paused():
+            return
+
         self._pac_man.update(delta_time, self._get_pressed_direction())
         self._hud.update(delta_time, self._pac_man.get_new_points())
 
@@ -105,6 +114,9 @@ class PlayGame:
             )
 
         self._hud.render(pixels)
+
+        if self._pause.is_game_paused():
+            self._pause.render(pixels)
 
         self._fb.commit()
         self._fb.put_image_to_window()

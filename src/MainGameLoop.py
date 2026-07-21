@@ -23,7 +23,7 @@ class MainGameLoop:
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._instructions_screen = InstructionsScreen(self._mlx_ctx)
-        self._game_screen = PlayGame(self._mlx_ctx, self._config)
+        self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
         self._pressed_keys: Set[int] = set()
 
     def run(self) -> None:
@@ -55,17 +55,22 @@ class MainGameLoop:
         return 0
 
     def on_key(self, keycode: int, param) -> int:
-        if keycode == KEY_ESCAPE:
-            if self._state.screen == Screen.INSTRUCTIONS:
-                self._state.screen = Screen.MAIN_MENU
-            else:
-                self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+        if keycode == KEY_ESCAPE and self._state.screen == Screen.MAIN_MENU:
+            self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
+            return 0
+
+        if keycode == KEY_ESCAPE and self._state.screen == Screen.INSTRUCTIONS:
+            self._state.screen = Screen.MAIN_MENU
             return 0
 
         if self._state.screen == Screen.MAIN_MENU:
             action = self._main_menu_screen.handle_key(keycode)
             if action is not None:
                 self._activate_main_menu_action(action)
+            return 0
+
+        if self._state.screen == Screen.GAME_PLAYING:
+            self._game_screen.handle_key(keycode)
             return 0
 
         return 0

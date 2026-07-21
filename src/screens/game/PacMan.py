@@ -50,6 +50,9 @@ class PacMan(Character):
 
     def update(self, delta_time: float, keycode: int):
         self._move_pac_man(keycode, delta_time)
+        self._animation += 1
+        if self._animation == 15:
+            self._animation = 0
 
     def render(self) -> NDArray[np.uint8]:
         pixels = self._fb.get_array()
@@ -57,9 +60,6 @@ class PacMan(Character):
         self._fb.draw_blended_tile(
             pixels,
             self._assets[self._direction][self._animation // 5], 0, 0)
-        self._animation += 1
-        if self._animation == 15:
-            self._animation = 0
 
         return pixels
 

@@ -21,7 +21,7 @@ class RenderText:
 
     def put_text_to_image(self, text: str) -> NDArray[np.uint8]:
         image = np.zeros(
-            (self._font_height, self._get_text_width(text), 4),
+            (self._font_height, self.get_text_width(text), 4),
             dtype=np.uint8)
 
         x_pos = 0
@@ -32,7 +32,7 @@ class RenderText:
 
         return image
 
-    def _get_text_width(self, text: str) -> int:
+    def get_text_width(self, text: str) -> int:
         len = 0
 
         for char in text:
