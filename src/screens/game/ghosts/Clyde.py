@@ -22,7 +22,7 @@ class Clyde(Ghost):
             maze,
             "clyde",
             start_cell,
-            speed_multiplier=1.7,
+            speed_multiplier=1.9,
         )
         self._target_cell: Optional[Tuple[int, int]] = None
 
