@@ -1,5 +1,5 @@
 from src.models.dataclasses import GameState, MlxContext, Screen
-from src.screens import PlayGame, MainMenu, InstructionsScreen
+from src.screens import PlayGame, MainMenu, InstructionsScreen, LoseScreen
 from typing import Set
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
@@ -13,6 +13,7 @@ _KEY_PRESS_EVENT = 2
 _KEY_RELEASE_EVENT = 3
 
 KEY_ESCAPE = 65307
+KEY_ENTER = 65293
 
 
 class MainGameLoop:
@@ -23,6 +24,7 @@ class MainGameLoop:
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._instructions_screen = InstructionsScreen(self._mlx_ctx)
+        self._lose_screen = LoseScreen(self._mlx_ctx)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
         self._pressed_keys: Set[int] = set()
 
@@ -45,16 +47,26 @@ class MainGameLoop:
             case Screen.MAIN_MENU:
                 self._main_menu_screen.render()
             case Screen.GAME_PLAYING:
-                self._game_screen.update(delta_time)
+                if not self._game_screen.update(delta_time):
+                    self._state.screen = Screen.WIN_OR_LOSE
+                    return 0
                 self._game_screen.render()
             case Screen.INSTRUCTIONS:
                 self._instructions_screen.render()
             case Screen.WIN_OR_LOSE:
-                pass
+                self._lose_screen.render()
 
         return 0
 
     def on_key(self, keycode: int, param) -> int:
+        if self._state.screen == Screen.WIN_OR_LOSE:
+            if keycode == KEY_ENTER:
+                self._restart_game()
+            elif keycode == KEY_ESCAPE:
+                self._reset_game()
+                self._state.screen = Screen.MAIN_MENU
+            return 0
+
         if keycode == KEY_ESCAPE and self._state.screen == Screen.MAIN_MENU:
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
             return 0
@@ -77,7 +89,7 @@ class MainGameLoop:
 
     def _activate_main_menu_action(self, action: str) -> None:
         if action == "start":
-            self._state.screen = Screen.GAME_PLAYING
+            self._restart_game()
         elif action == "exit":
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
         elif action == "instructions":
@@ -110,3 +122,15 @@ class MainGameLoop:
         m.mlx_key_hook(win_ptr, self.on_key, None)
 
         return mlx_ctx
+
+    def _reset_game(self) -> None:
+        self._game_screen = PlayGame(
+            self._mlx_ctx,
+            self._config,
+            self._state,
+        )
+
+    def _restart_game(self) -> None:
+        self._reset_game()
+        self._state.screen = Screen.GAME_PLAYING
+
