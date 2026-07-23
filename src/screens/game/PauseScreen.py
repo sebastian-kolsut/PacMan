@@ -1,6 +1,6 @@
 from src.screens.draw_utils import FrameBuffer, RenderText
 from src.models import MlxContext
-from src.models.dataclasses import GameState, Screen
+from src.models.dataclasses import ProgramState, Screen
 
 from numpy.typing import NDArray
 import numpy as np
@@ -20,7 +20,7 @@ MAIN_TINT = (0, 0, 0, 220)
 
 
 class PauseScreen:
-    def __init__(self, mlx_ctx: MlxContext, game_state: GameState) -> None:
+    def __init__(self, mlx_ctx: MlxContext, game_state: ProgramState) -> None:
         self._mlx_ctx = mlx_ctx
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         self._txt = RenderText(FONT_FILEPATH, mlx_ctx, 0.1)

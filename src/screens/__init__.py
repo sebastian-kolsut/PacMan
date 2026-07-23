@@ -1,7 +1,7 @@
 from .PlayGame import PlayGame
 from .MainMenu import MainMenu
 from .InstructionsScreen import InstructionsScreen
-from .LoseScreen import LoseScreen
+from .WinLoseScreen import WinLoseScreen
 
 
-__all__ = ["PlayGame", "MainMenu", "InstructionsScreen", "LoseScreen",]
+__all__ = ["PlayGame", "MainMenu", "InstructionsScreen", "WinLoseScreen",]

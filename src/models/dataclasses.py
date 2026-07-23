@@ -19,11 +19,18 @@ class Direction(int, Enum):
     LEFT = 3
 
 
+class GameState(Enum):
+    LOST = auto()
+    WON = auto()
+    PLAYING = auto()
+
+
 @dataclass
-class GameState:
+class ProgramState:
 
     screen: Screen = Screen.MAIN_MENU
     last_frame_time: float = field(default_factory=time.time)
+    state: GameState = GameState.PLAYING
     frame_interval: float = 1 / 120
 
 

@@ -30,6 +30,9 @@ class Pacgums:
         self._points_per_pacgum = config.points_per_pacgum
         self._points_per_super = config.points_per_super_pacgum
 
+    def is_level_won(self) -> bool:
+        return self._layout == 0 and self._super_layout == 0
+
     def draw_pacgums_to_image(self, image: NDArray[np.uint8],
                               maze_pos_x: int) -> None:
         for i in range(self._maze.width * self._maze.height):

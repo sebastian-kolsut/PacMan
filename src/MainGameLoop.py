@@ -1,5 +1,5 @@
-from src.models.dataclasses import GameState, MlxContext, Screen
-from src.screens import PlayGame, MainMenu, InstructionsScreen, LoseScreen
+from src.models.dataclasses import ProgramState, MlxContext, Screen
+from src.screens import PlayGame, MainMenu, InstructionsScreen, WinLoseScreen
 from typing import Set
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
@@ -20,11 +20,11 @@ class MainGameLoop:
 
     def __init__(self) -> None:
         self._config = Parser().parse("tests/jsons/valid_no_comments.json")
-        self._state = GameState()
+        self._state = ProgramState()
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._instructions_screen = InstructionsScreen(self._mlx_ctx)
-        self._lose_screen = LoseScreen(self._mlx_ctx)
+        self._lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
         self._pressed_keys: Set[int] = set()
 
@@ -47,9 +47,7 @@ class MainGameLoop:
             case Screen.MAIN_MENU:
                 self._main_menu_screen.render()
             case Screen.GAME_PLAYING:
-                if not self._game_screen.update(delta_time):
-                    self._state.screen = Screen.WIN_OR_LOSE
-                    return 0
+                self._game_screen.update(delta_time)
                 self._game_screen.render()
             case Screen.INSTRUCTIONS:
                 self._instructions_screen.render()
