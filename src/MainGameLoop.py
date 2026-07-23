@@ -19,7 +19,7 @@ KEY_ENTER = 65293
 class MainGameLoop:
 
     def __init__(self) -> None:
-        self._config = Parser().parse("tests/jsons/valid_no_comments.json")
+        self._config = Parser().parse("config.json")
         self._state = ProgramState()
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
