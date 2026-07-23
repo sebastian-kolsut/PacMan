@@ -84,7 +84,8 @@ class PlayGame:
 
         self._pac_man.update(delta_time, self._get_pressed_direction())
 
-        if not self._hud.update(delta_time, self._pac_man.get_new_points()):
+        if not self._hud.update(delta_time, self._pac_man.get_new_points(),
+                                self._lives):
             self._game_over = True
             return False
 
@@ -165,7 +166,6 @@ class PlayGame:
 
     def _lose_life(self) -> None:
         self._lives -= 1
-        print(f"zostalo: {self._lives}")
 
         if self._lives <= 0:
             self._game_over = True

@@ -17,8 +17,9 @@ class HUD:
         self._lives = Lives(config.lives, mlx_ctx)
         self._score = Score(mlx_ctx)
 
-    def update(self, delta_time: float, points: int) -> bool:
+    def update(self, delta_time: float, points: int, lives: int) -> bool:
         self._score.update(points)
+        self._lives.update(lives)
         if not self._timer.update(delta_time):
             return False
         return True

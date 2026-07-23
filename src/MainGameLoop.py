@@ -133,4 +133,3 @@ class MainGameLoop:
     def _restart_game(self) -> None:
         self._reset_game()
         self._state.screen = Screen.GAME_PLAYING
-
