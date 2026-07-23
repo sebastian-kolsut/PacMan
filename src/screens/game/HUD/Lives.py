@@ -11,15 +11,22 @@ _SPRITESHEET = "assets/heart_spritesheet.png"
 
 class Lives:
     def __init__(self, lives_count: int, mlx_ctx: MlxContext):
+        self._max_lives = lives_count
         self._lives_count = lives_count
         self._mlx_ctx = mlx_ctx
         self.size = int(mlx_ctx.win_height * 0.07)
         self._assets = self._load_assets(self.size)
 
+    def update(self, lives: int) -> None:
+        self._lives_count = lives
+
     def render(self, main_screen: NDArray[np.uint8]) -> None:
-        for i in range(3):
+        heart_image = 0
+
+        for i in range(self._max_lives):
+            heart_image = 0 if i < self._lives_count else 1
             FrameBuffer.draw_blended_tile(
-                main_screen, self._assets[i % 2], 20,
+                main_screen, self._assets[heart_image], 20,
                 int(self._mlx_ctx.win_width * 0.8) + i * self.size)
 
     def _load_assets(self, size: int) -> Tuple[NDArray[np.uint8],
