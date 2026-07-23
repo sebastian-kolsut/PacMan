@@ -150,3 +150,27 @@ class Character(ABC):
             y_remainder <= tolerance
             or self._cell_size - y_remainder <= tolerance
         )
+
+    def get_center_position(self) -> Tuple[float, float]:
+        """Return the center position of the character in pixels."""
+        return (
+            self._pos_x + self._character_size / 2,
+            self._pos_y + self._character_size / 2,
+        )
+
+    def get_collision_radius(self) -> float:
+        """Return the collision radius of the character."""
+        return self._character_size * 0.35
+
+    def _save_start_state(self) -> None:
+        """Save the initial character position and direction."""
+        self._start_pos_x = self._pos_x
+        self._start_pos_y = self._pos_y
+        self._start_direction = self._direction
+
+    def reset_position(self) -> None:
+        """Reset the character to its initial position and direction."""
+        self._pos_x = self._start_pos_x
+        self._pos_y = self._start_pos_y
+        self._direction = self._start_direction
+        self._pending_direction = self._start_direction

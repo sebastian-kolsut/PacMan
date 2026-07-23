@@ -37,6 +37,9 @@ class PacMan(Character):
         self._points = 0
         self._pos_x = float((maze.width // 2) * cell_size)
         self._pos_y = float((maze.height // 2) * cell_size)
+        self._direction = Direction.RIGHT
+        self._pending_direction = Direction.RIGHT
+        self._save_start_state()
 
         self._assets = {
             Direction.UP: self._load_assets(self._character_size, _UP_FOLDER),

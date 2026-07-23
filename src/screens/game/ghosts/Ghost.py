@@ -59,6 +59,7 @@ class Ghost(Character):
         self.set_speed_multiplier(speed_multiplier)
         self._direction = self._get_random_valid_direction()
         self._pending_direction = self._direction
+        self._save_start_state()
 
     def update(
         self,
