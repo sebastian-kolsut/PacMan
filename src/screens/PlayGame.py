@@ -1,5 +1,5 @@
 from src.models import Config, MlxContext
-from src.models.dataclasses import GameState
+from src.models.dataclasses import ProgramState, Screen, GameState
 from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, PauseScreen
 from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky
 from src.screens.game.HUD import HUD
@@ -18,8 +18,9 @@ _DIRECTION_KEYS = (_W, _A, _S, _D,
 
 class PlayGame:
     def __init__(self, mlx_ctx: MlxContext, config: Config,
-                 game_state: GameState) -> None:
+                 program_state: ProgramState) -> None:
         self._mlx_ctx = mlx_ctx
+        self._program_state = program_state
         self._current_level = 0
         self._config = config
         self._maze = Maze(config)
@@ -30,7 +31,7 @@ class PlayGame:
         self._lives = getattr(config, "lives", 3)
         self._game_over = False
         self._respawn_delay = 0.0
-        self._pause = PauseScreen(mlx_ctx, game_state)
+        self._pause = PauseScreen(mlx_ctx, program_state)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
             Blinky(cell_size, mlx_ctx, self._maze, (0, 0)),
@@ -73,12 +74,18 @@ class PlayGame:
     def handle_key(self, keycode: int) -> None:
         self._pause.update(keycode)
 
-    def update(self, delta_time: float) -> bool:
+    def update(self, delta_time: float) -> None:
         if self._game_over:
-            return False
+            self._program_state.screen = Screen.WIN_OR_LOSE
+            self._program_state.state = GameState.LOST
+            return
+
+        if self._pacgums.is_level_won():
+            self._program_state.screen = Screen.WIN_OR_LOSE
+            self._program_state.state = GameState.WON
 
         if self._pause.is_game_paused():
-            return True
+            return
         if self._respawn_delay > 0:
             self._respawn_delay -= delta_time
 
@@ -87,7 +94,9 @@ class PlayGame:
         if not self._hud.update(delta_time, self._pac_man.get_new_points(),
                                 self._lives):
             self._game_over = True
-            return False
+            self._program_state.screen = Screen.WIN_OR_LOSE
+            self._program_state.state = GameState.LOST
+            return
 
         pacman_cell = self._pac_man.get_cell_position()
         pacman_direction = self._pac_man.get_direction()
@@ -103,9 +112,9 @@ class PlayGame:
             self._lose_life()
 
             if self._game_over:
-                return False
-
-        return True
+                self._program_state.screen = Screen.WIN_OR_LOSE
+                self._program_state.state = GameState.LOST
+                return
 
     def render(self) -> None:
         maze_img = self._render_maze.render()
