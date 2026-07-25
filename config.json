@@ -1,5 +1,5 @@
 {
-  "highscore_filename": "highscores.txt",
+  "highscore_filename": "highscores.json",
   "lives": 3,
   "pacgum": 130,
   "points_per_pacgum": 10,
