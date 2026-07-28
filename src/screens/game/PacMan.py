@@ -35,6 +35,7 @@ class PacMan(Character):
         self._pacgums = pacgums
         self._animation = 0
         self._points = 0
+        self._ate_super_pacgum = False
         self._pos_x = float((maze.width // 2) * cell_size)
         self._pos_y = float((maze.height // 2) * cell_size)
         self._direction = Direction.RIGHT
@@ -67,7 +68,12 @@ class PacMan(Character):
         return pixels
 
     def get_new_points(self) -> int:
-        return self._points
+        points = self._points
+        self._points = 0
+        return points
+
+    def add_points(self, points: int) -> None:
+        self._points += points
 
     def get_cell_position(self) -> tuple[int, int]:
         return self._get_current_cell()
@@ -76,17 +82,26 @@ class PacMan(Character):
         return self._direction
 
     def _move_pac_man(self, keycode: int, delta_time: float):
-        if keycode != 0:
+        if keycode in _DIRETCIONS:
             self._pending_direction = _DIRETCIONS[keycode]
         self._try_turn(delta_time)
 
         next_pac_x, next_pac_y = self._get_next_step_xy(delta_time)
 
         cell_idx = self._get_cell_idx(next_pac_x, next_pac_y)
-        self._points = self._pacgums._eat_pacgum_if_there(cell_idx)
+        points, ate_super = self._pacgums._eat_pacgum_if_there(cell_idx)
+        self._points = points
+
+        if ate_super:
+            self._ate_super_pacgum = True
 
         if self._check_for_wall(next_pac_x, next_pac_y, self._direction):
             self._snap_to_cell()
             return
 
         self._pos_x, self._pos_y = next_pac_x, next_pac_y
+
+    def ate_super_pacgum(self) -> bool:
+        ate_super = self._ate_super_pacgum
+        self._ate_super_pacgum = False
+        return ate_super

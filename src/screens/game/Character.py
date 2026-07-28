@@ -137,7 +137,6 @@ class Character(ABC):
         )
 
     def _is_close_to_cell_center(self) -> bool:
-
         tolerance = max(2.0, self._speed / 60.0)
 
         x_remainder = self._pos_x % self._cell_size
