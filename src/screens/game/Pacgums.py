@@ -59,14 +59,16 @@ class Pacgums:
                     + self._size_super
                 image[y0:y1, x0 + maze_pos_x:x1] = self._img_super
 
-    def _eat_pacgum_if_there(self, idx: int) -> int:
+    def _eat_pacgum_if_there(self, idx: int) -> tuple[int, bool]:
         if (self._layout & (1 << idx)) != 0:
             self._layout &= ~(1 << idx)
-            return self._points_per_pacgum
+            return self._points_per_pacgum, False
+
         if (self._super_layout & (1 << idx)) != 0:
             self._super_layout &= ~(1 << idx)
-            return self._points_per_super
-        return 0
+            return self._points_per_super, True
+
+        return 0, False
 
     def _get_pacgum_position(self, x: int, y: int, offset: int
                              ) -> Tuple[int, int]:

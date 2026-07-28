@@ -17,6 +17,8 @@ _GHOST_ASSETS = {
     "inky": "assets/ghosts/inky.png",
 }
 
+_BLUE_GHOST_ASSET = "assets/ghosts/blue_ghost.png"
+
 _DIRECTIONS = [
     Direction.UP,
     Direction.RIGHT,
@@ -28,6 +30,9 @@ _DIRECTIONS = [
 _DEFAULT_SPEED_MULTIPLIER = 2.0
 _MIN_SPEED_MULTIPLIER = 0.5
 _MAX_SPEED_MULTIPLIER = 5.0
+_FRIGHTENED_SPEED_MULTIPLIER = 1.0
+_RESPAWN_DELAY = 5.0
+_BLINK_INTERVAL = 0.20
 
 
 class Ghost(Character):
@@ -49,6 +54,20 @@ class Ghost(Character):
             self._character_size,
         )
 
+        self._normal_asset = self._asset
+        self._blue_asset = self._fb.get_image_array(
+            _BLUE_GHOST_ASSET,
+            self._character_size,
+            self._character_size,
+        )
+        self._is_frightened = False
+        self._is_eaten = False
+        self._is_blinking = False
+        self._blink_timer = 0.0
+        self._show_blue_asset = True
+        self._respawn_timer = 0.0
+        self._normal_speed_multiplier = speed_multiplier
+
         start_x, start_y = start_cell
         start_x = max(0, min(start_x, self._maze.width - 1))
         start_y = max(0, min(start_y, self._maze.height - 1))
@@ -67,6 +86,28 @@ class Ghost(Character):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> None:
+        if self._is_eaten:
+            self._respawn_timer -= delta_time
+
+            if self._respawn_timer <= 0:
+                self._is_eaten = False
+                self._respawn_timer = 0.0
+                self._is_frightened = False
+                self._is_blinking = False
+                self._blink_timer = 0.0
+                self._show_blue_asset = False
+                self.set_speed_multiplier(self._normal_speed_multiplier)
+                self.reset_position()
+
+            return
+
+        if self._is_blinking:
+            self._blink_timer -= delta_time
+
+            if self._blink_timer <= 0:
+                self._blink_timer = _BLINK_INTERVAL
+                self._show_blue_asset = not self._show_blue_asset
+
         if self._is_close_to_cell_center():
             self._snap_to_cell()  # round cell
 
@@ -78,10 +119,13 @@ class Ghost(Character):
                 self._should_recalculate_direction()
                 or self._direction not in valid_directions
             ):
-                self._pending_direction = self._choose_direction(
-                    pacman_cell,
-                    pacman_direction,
-                )
+                if self._is_frightened:
+                    self._pending_direction = self._choose_flee_direction(pacman_cell)
+                else:
+                    self._pending_direction = self._choose_direction(
+                        pacman_cell,
+                        pacman_direction,
+                    )
 
         self._try_turn(delta_time)
 
@@ -91,10 +135,13 @@ class Ghost(Character):
             self._snap_to_cell()
             valid_directions = self._get_valid_directions()
             if valid_directions:
-                self._direction = self._choose_direction(
-                    pacman_cell,
-                    pacman_direction,
-                )
+                if self._is_frightened:
+                    self._direction = self._choose_flee_direction(pacman_cell)
+                else:
+                    self._direction = self._choose_direction(
+                        pacman_cell,
+                        pacman_direction,
+                    )
                 self._pending_direction = self._direction
             return
 
@@ -108,9 +155,17 @@ class Ghost(Character):
         pixels = self._fb.get_array()
         pixels[:, :] = [0, 0, 0, 0]
 
+        if self._is_eaten:
+            return pixels
+
+        if self._is_frightened:
+            asset = self._blue_asset if self._show_blue_asset else self._normal_asset
+        else:
+            asset = self._normal_asset
+
         self._fb.draw_blended_tile(
             pixels,
-            self._asset,
+            asset,
             0,
             0,
         )
@@ -319,3 +374,75 @@ class Ghost(Character):
                     queue.append(next_cell)
 
         return list(visited)
+
+    def set_frightened(self, is_frightened: bool) -> None:
+        if self._is_eaten:
+            return
+
+        self._is_frightened = is_frightened
+
+        if is_frightened:
+            self._is_blinking = False
+            self._blink_timer = 0.0
+            self._show_blue_asset = True
+            self.set_speed_multiplier(_FRIGHTENED_SPEED_MULTIPLIER)
+        else:
+            self._is_blinking = False
+            self._blink_timer = 0.0
+            self._show_blue_asset = False
+            self.set_speed_multiplier(self._normal_speed_multiplier)
+
+    def is_frightened(self) -> bool:
+        return self._is_frightened
+
+    def _choose_flee_direction(
+        self,
+        pacman_cell: Tuple[int, int],
+    ) -> Direction:
+        valid_directions = self._get_valid_directions()
+
+        if not valid_directions:
+            return self._direction
+
+        current_x, current_y = self._get_current_cell()
+        pacman_x, pacman_y = pacman_cell
+
+        best_direction = valid_directions[0]
+        best_distance = -1
+
+        for direction in valid_directions:
+            next_x, next_y = self._get_next_cell_from_direction(
+                current_x,
+                current_y,
+                direction,
+            )
+
+            distance = abs(next_x - pacman_x) + abs(next_y - pacman_y)
+
+            if distance > best_distance:
+                best_distance = distance
+                best_direction = direction
+
+        return best_direction
+
+    def eat(self) -> None:
+        self._is_eaten = True
+        self._is_frightened = False
+        self._is_blinking = False
+        self._blink_timer = 0.0
+        self._show_blue_asset = False
+        self._respawn_timer = _RESPAWN_DELAY
+        self.set_speed_multiplier(self._normal_speed_multiplier)
+
+    def is_eaten(self) -> bool:
+        return self._is_eaten
+
+    def set_blinking(self, is_blinking: bool) -> None:
+        if self._is_eaten or not self._is_frightened:
+            return
+
+        self._is_blinking = is_blinking
+
+        if not is_blinking:
+            self._show_blue_asset = True
+            self._blink_timer = 0.0

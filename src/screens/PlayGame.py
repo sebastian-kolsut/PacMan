@@ -15,6 +15,9 @@ _A_UP, _A_RIGHT, _A_DOWN, _A_LEFT = 65362, 65363, 65364, 65361
 _DIRECTION_KEYS = (_W, _A, _S, _D,
                    _A_UP, _A_RIGHT, _A_DOWN, _A_LEFT)
 
+_GHOST_EDIBLE_TIME = 7.0
+_GHOST_BLINK_TIME = 2.0
+
 
 class PlayGame:
     def __init__(self, mlx_ctx: MlxContext, config: Config,
@@ -31,6 +34,7 @@ class PlayGame:
         self._lives = getattr(config, "lives", 3)
         self._game_over = False
         self._respawn_delay = 0.0
+        self._ghost_edible_timer = 0.0
         self._pause = PauseScreen(mlx_ctx, program_state)
         self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
         self._ghosts = [
@@ -75,6 +79,7 @@ class PlayGame:
         self._pause.update(keycode)
 
     def update(self, delta_time: float) -> None:
+
         if self._game_over:
             self._program_state.screen = Screen.WIN_OR_LOSE
             self._program_state.state = GameState.LOST
@@ -83,20 +88,19 @@ class PlayGame:
         if self._pacgums.is_level_won():
             self._program_state.screen = Screen.WIN_OR_LOSE
             self._program_state.state = GameState.WON
+            return
 
         if self._pause.is_game_paused():
             return
         if self._respawn_delay > 0:
             self._respawn_delay -= delta_time
 
+        self._update_ghost_edible_mode(delta_time)
+
         self._pac_man.update(delta_time, self._get_pressed_direction())
 
-        if not self._hud.update(delta_time, self._pac_man.get_new_points(),
-                                self._lives):
-            self._game_over = True
-            self._program_state.screen = Screen.WIN_OR_LOSE
-            self._program_state.state = GameState.LOST
-            return
+        if self._pac_man.ate_super_pacgum():
+            self._activate_ghost_edible_mode()
 
         pacman_cell = self._pac_man.get_cell_position()
         pacman_direction = self._pac_man.get_direction()
@@ -108,13 +112,30 @@ class PlayGame:
                 pacman_direction,
             )
 
-        if self._respawn_delay <= 0 and self._has_ghost_collision():
-            self._lose_life()
+        if self._respawn_delay <= 0:
+            collided_ghost = self._get_collided_ghost()
 
-            if self._game_over:
-                self._program_state.screen = Screen.WIN_OR_LOSE
-                self._program_state.state = GameState.LOST
-                return
+            if collided_ghost is not None:
+                if collided_ghost.is_frightened():
+                    collided_ghost.eat()
+                    self._pac_man.add_points(self._config.points_per_ghost)
+                else:
+                    self._lose_life()
+
+                    if self._game_over:
+                        self._program_state.screen = Screen.WIN_OR_LOSE
+                        self._program_state.state = GameState.LOST
+                        return
+
+        if not self._hud.update(
+            delta_time,
+            self._pac_man.get_new_points(),
+            self._lives,
+        ):
+            self._game_over = True
+            self._program_state.screen = Screen.WIN_OR_LOSE
+            self._program_state.state = GameState.LOST
+            return
 
     def render(self) -> None:
         maze_img = self._render_maze.render()
@@ -134,7 +155,6 @@ class PlayGame:
             int(self._pac_man._pos_y) + self._pac_man._offset,
             int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
             )
-        self._hud.render(pixels)
 
         for ghost in self._ghosts:
             ghost_img = ghost.render()
@@ -155,11 +175,14 @@ class PlayGame:
         self._fb.commit()
         self._fb.put_image_to_window()
 
-    def _has_ghost_collision(self) -> bool:
+    def _get_collided_ghost(self):
         pacman_x, pacman_y = self._pac_man.get_center_position()
         pacman_radius = self._pac_man.get_collision_radius()
 
         for ghost in self._ghosts:
+            if ghost.is_eaten():
+                continue
+
             ghost_x, ghost_y = ghost.get_center_position()
             ghost_radius = ghost.get_collision_radius()
 
@@ -169,9 +192,9 @@ class PlayGame:
             )
 
             if distance <= pacman_radius + ghost_radius:
-                return True
+                return ghost
 
-        return False
+        return None
 
     def _lose_life(self) -> None:
         self._lives -= 1
@@ -188,3 +211,27 @@ class PlayGame:
 
         for ghost in self._ghosts:
             ghost.reset_position()
+
+    def _activate_ghost_edible_mode(self) -> None:
+        self._ghost_edible_timer = _GHOST_EDIBLE_TIME
+
+        for ghost in self._ghosts:
+            ghost.set_frightened(True)
+
+    def _update_ghost_edible_mode(self, delta_time: float) -> None:
+        if self._ghost_edible_timer <= 0:
+            return
+
+        self._ghost_edible_timer -= delta_time
+
+        if self._ghost_edible_timer <= 0:
+            self._ghost_edible_timer = 0.0
+
+            for ghost in self._ghosts:
+                ghost.set_frightened(False)
+
+            return
+
+        if self._ghost_edible_timer <= _GHOST_BLINK_TIME:
+            for ghost in self._ghosts:
+                ghost.set_blinking(True)
