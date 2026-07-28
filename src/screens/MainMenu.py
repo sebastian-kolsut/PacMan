@@ -17,6 +17,9 @@ _BUTTON_WIDTH = 660
 _BUTTON_HEIGHT = 120
 
 _BUTTON_GAP = 8
+_SIDE_CHARACTER_GAP_SCALE = 0.015
+_SIDE_CHARACTER_HEIGHT_SCALE = 0.95
+_CHARACTER_ASPECT_RATIO = 725 / 1800
 
 KEY_SPACE = 32
 KEY_ENTER = 65293
@@ -51,6 +54,8 @@ class MainMenu:
             self._selected_button_width,
             self._selected_button_height,
         ) = self._calculate_asset_sizes()
+        self._side_character_width, self._side_character_height = \
+            self._calculate_side_character_size()
 
         self._title = FrameBuffer.get_image_array(
             str(_ASSETS_DIR / "title.png"),
@@ -113,6 +118,16 @@ class MainMenu:
                 self._selected_button_height,
             ),
         }
+        self._nata = FrameBuffer.get_image_array(
+            str(_ASSETS_DIR / "NATA.png"),
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._seba = FrameBuffer.get_image_array(
+            str(_ASSETS_DIR / "SEBA.png"),
+            self._side_character_width,
+            self._side_character_height,
+        )
 
     def handle_key(self, keycode: int) -> str | None:
         if keycode == KEY_UP:
@@ -140,8 +155,13 @@ class MainMenu:
         title_y = max(20, (self._mlx_ctx.win_height - menu_height) // 2)
 
         first_button_y = title_y + self._title_height + 20
+        buttons_height = (
+            len(self._actions) * self._button_height
+            + (len(self._actions) - 1) * _BUTTON_GAP
+        )
 
         self._draw_centered(self._title, center_x, title_y)
+        self._draw_side_characters(first_button_y, buttons_height)
 
         for index, action in enumerate(self._actions):
             base_y = first_button_y + index * (
@@ -204,6 +224,31 @@ class MainMenu:
             x,
         )
 
+    def _draw_side_characters(
+        self,
+        first_button_y: int,
+        buttons_height: int,
+    ) -> None:
+        button_left = (self._mlx_ctx.win_width - self._button_width) // 2
+        button_right = button_left + self._button_width
+        gap = max(12, int(self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE))
+        character_y = first_button_y + (
+            buttons_height - self._side_character_height
+        ) // 2
+
+        FrameBuffer.draw_blended_tile(
+            self._fb.get_array(),
+            self._nata,
+            character_y,
+            button_left - gap - self._side_character_width,
+        )
+        FrameBuffer.draw_blended_tile(
+            self._fb.get_array(),
+            self._seba,
+            character_y,
+            button_right + gap,
+        )
+
     def _calculate_asset_sizes(self) -> tuple[int, int, int, int, int, int]:
         window_width = self._mlx_ctx.win_width
         window_height = self._mlx_ctx.win_height
@@ -243,3 +288,26 @@ class MainMenu:
             selected_button_width,
             selected_button_height,
         )
+
+    def _calculate_side_character_size(self) -> tuple[int, int]:
+        buttons_height = (
+            len(self._actions) * self._button_height
+            + (len(self._actions) - 1) * _BUTTON_GAP
+        )
+        gap = max(12, int(
+            self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE
+        ))
+        available_side_width = max(
+            1,
+            (self._mlx_ctx.win_width - self._button_width) // 2 - gap,
+        )
+        max_height_from_width = int(
+            available_side_width / _CHARACTER_ASPECT_RATIO
+        )
+        height = max(1, min(
+            int(buttons_height * _SIDE_CHARACTER_HEIGHT_SCALE),
+            max_height_from_width,
+        ))
+        width = max(1, int(height * _CHARACTER_ASPECT_RATIO))
+
+        return width, height

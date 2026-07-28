@@ -17,6 +17,19 @@ _DIRECTION_KEYS = (_W, _A, _S, _D,
 
 _GHOST_EDIBLE_TIME = 7.0
 _GHOST_BLINK_TIME = 2.0
+_SEBA_LIKE_DURATION = 2.0
+_OOPS_DURATION = 2.0
+
+_SIDE_CHARACTER_ASPECT_RATIO = 725 / 1800
+_SIDE_CHARACTER_HEIGHT_SCALE = 0.45
+_SIDE_CHARACTER_GAP = 12
+
+_NATA_COOL_ASSET = "assets/sebanata/NATA_COOL.png"
+_NATA_BOO_ASSET = "assets/sebanata/NATA_BOO.png"
+_NATA_OOPS_ASSET = "assets/sebanata/NATA_OOPS.png"
+_SEBA_COOL_ASSET = "assets/sebanata/SEBA_COOL.png"
+_SEBA_LIKE_ASSET = "assets/sebanata/SEBA_LIKE.png"
+_SEBA_OOPS_ASSET = "assets/sebanata/SEBA_OOPS.png"
 
 
 class PlayGame:
@@ -59,6 +72,42 @@ class PlayGame:
             ),
         ]
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
+        (
+            self._side_character_width,
+            self._side_character_height,
+        ) = self._calculate_side_character_size()
+        self._nata_cool = FrameBuffer.get_image_array(
+            _NATA_COOL_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._nata_boo = FrameBuffer.get_image_array(
+            _NATA_BOO_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._nata_oops = FrameBuffer.get_image_array(
+            _NATA_OOPS_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._seba_cool = FrameBuffer.get_image_array(
+            _SEBA_COOL_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._seba_like = FrameBuffer.get_image_array(
+            _SEBA_LIKE_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._seba_oops = FrameBuffer.get_image_array(
+            _SEBA_OOPS_ASSET,
+            self._side_character_width,
+            self._side_character_height,
+        )
+        self._seba_like_timer = 0.0
+        self._oops_timer = 0.0
         self._last_pressed_key = 0
 
         self._keyboard = Display()
@@ -95,8 +144,13 @@ class PlayGame:
         if self._respawn_delay > 0:
             self._respawn_delay -= delta_time
 
-        self._update_ghost_edible_mode(delta_time)
+        self._seba_like_timer = max(
+            0.0,
+            self._seba_like_timer - delta_time,
+        )
+        self._oops_timer = max(0.0, self._oops_timer - delta_time)
 
+        self._update_ghost_edible_mode(delta_time)
         self._pac_man.update(delta_time, self._get_pressed_direction())
 
         if self._pac_man.ate_super_pacgum():
@@ -119,6 +173,7 @@ class PlayGame:
                 if collided_ghost.is_frightened():
                     collided_ghost.eat()
                     self._pac_man.add_points(self._config.points_per_ghost)
+                    self._seba_like_timer = _SEBA_LIKE_DURATION
                 else:
                     self._lose_life()
 
@@ -148,6 +203,7 @@ class PlayGame:
 
         pixels[:maze_img.shape[0], maze_x:maze_x+maze_img.shape[1], :3] = \
             maze_img[:, :, :3]
+        self._draw_side_characters(pixels, maze_x, maze_img.shape[1])
         self._pacgums.draw_pacgums_to_image(pixels, maze_x)
         self._pacgums.draw_super_to_image(pixels, maze_x)
         self._fb.draw_blended_tile(
@@ -175,6 +231,53 @@ class PlayGame:
         self._fb.commit()
         self._fb.put_image_to_window()
 
+    def _draw_side_characters(
+        self,
+        pixels: np.ndarray,
+        maze_x: int,
+        maze_width: int,
+    ) -> None:
+        if self._oops_timer > 0:
+            nata_image = self._nata_oops
+            seba_image = self._seba_oops
+        else:
+            nata_image = self._nata_boo if any(
+                ghost.is_frightened() for ghost in self._ghosts
+            ) else self._nata_cool
+            seba_image = self._seba_like if self._seba_like_timer > 0 \
+                else self._seba_cool
+        y = self._render_maze.fb.height - self._side_character_height
+
+        FrameBuffer.draw_blended_tile(
+            pixels,
+            nata_image,
+            y,
+            maze_x - _SIDE_CHARACTER_GAP - self._side_character_width,
+        )
+        FrameBuffer.draw_blended_tile(
+            pixels,
+            seba_image,
+            y,
+            maze_x + maze_width + _SIDE_CHARACTER_GAP,
+        )
+
+    def _calculate_side_character_size(self) -> tuple[int, int]:
+        maze_width = self._render_maze.fb.width
+        maze_height = self._render_maze.fb.height
+        maze_x = self._render_maze.get_maze_position()
+        right_space = self._mlx_ctx.win_width - maze_x - maze_width
+        available_width = max(1, min(maze_x, right_space) - _SIDE_CHARACTER_GAP)
+        max_height_from_width = int(
+            available_width / _SIDE_CHARACTER_ASPECT_RATIO
+        )
+        height = max(1, min(
+            int(maze_height * _SIDE_CHARACTER_HEIGHT_SCALE),
+            max_height_from_width,
+        ))
+        width = max(1, int(height * _SIDE_CHARACTER_ASPECT_RATIO))
+
+        return width, height
+
     def _get_collided_ghost(self):
         pacman_x, pacman_y = self._pac_man.get_center_position()
         pacman_radius = self._pac_man.get_collision_radius()
@@ -198,6 +301,7 @@ class PlayGame:
 
     def _lose_life(self) -> None:
         self._lives -= 1
+        self._oops_timer = _OOPS_DURATION
 
         if self._lives <= 0:
             self._game_over = True
