@@ -16,6 +16,8 @@ _MAZE_WIDTH_SCALE = 0.7
 _PATTERN_CELL = 0b1111
 
 _PINK = (255, 184, 219, 255)
+_NICE_COLOR = (157, 63, 253, 220)
+_NICE_PATTERN = (218, 180, 255, 210)
 _NO_COLOR = (0, 0, 0, 0)
 _PINK_PATTERN = (255, 184, 219, 165)
 _SOFT_PATTERN = (253, 241, 236, 255)
@@ -80,7 +82,7 @@ class RenderMaze:
         if mask == _PATTERN_CELL:
             mask = self._get_pattern_mask(bit_idx)
             img = self.fb.swap_colors_in_image_leave_out(
-                _PINK, _PINK_PATTERN, self._walls[mask])
+                _NICE_COLOR, _NICE_PATTERN, self._walls[mask])
 
         self.fb.draw_blended_tile(pixels, img,
                                   y * self._cell_size, x * self._cell_size)
@@ -123,7 +125,7 @@ class RenderMaze:
         img = self.fb.get_image_array(file_name, self._cell_size,
                                       self._cell_size)
         img = self.fb.swap_colors_in_image_leave_out(
-            _NO_COLOR, _PINK, img)
+            _NO_COLOR, _NICE_COLOR, img)
 
         return img
 

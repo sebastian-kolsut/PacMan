@@ -9,6 +9,8 @@ import random
 
 _KINDA_YELLOW = (71, 167, 222, 255)
 _PINK = (231, 27, 250, 255)
+_NICE = (3, 202, 253, 50)
+# 198, 160, 250, 255
 
 
 class Pacgums:
@@ -112,6 +114,6 @@ class Pacgums:
 
         distance_sq = (x - center)**2 + (y - center)**2
         mask = distance_sq < (size / 2)**2
-        pacgum_img[mask] = _PINK
+        pacgum_img[mask] = _NICE
 
         return pacgum_img

@@ -106,6 +106,7 @@ class PlayGame:
             self._side_character_width,
             self._side_character_height,
         )
+        self._replace_side_character_transparency_with_black()
         self._seba_like_timer = 0.0
         self._oops_timer = 0.0
         self._last_pressed_key = 0
@@ -246,27 +247,43 @@ class PlayGame:
             ) else self._nata_cool
             seba_image = self._seba_like if self._seba_like_timer > 0 \
                 else self._seba_cool
-        y = self._render_maze.fb.height - self._side_character_height
+        y0 = self._render_maze.fb.height - self._side_character_height
+        y1 = y0 + self._side_character_height
+        x0_nata = maze_x - _SIDE_CHARACTER_GAP - self._side_character_width
+        x1_nata = x0_nata + self._side_character_width
+        x0_seba = maze_x + maze_width + _SIDE_CHARACTER_GAP
+        x1_seba = x0_seba + self._side_character_width
 
-        FrameBuffer.draw_blended_tile(
-            pixels,
-            nata_image,
-            y,
-            maze_x - _SIDE_CHARACTER_GAP - self._side_character_width,
-        )
-        FrameBuffer.draw_blended_tile(
-            pixels,
-            seba_image,
-            y,
-            maze_x + maze_width + _SIDE_CHARACTER_GAP,
-        )
+        pixels[y0:y1, x0_nata:x1_nata] = nata_image.astype(np.uint8)
+        pixels[y0:y1, x0_seba:x1_seba] = seba_image.astype(np.uint8)
+
+    def _replace_side_character_transparency_with_black(self) -> None:
+        self._nata_cool = self._blacken_transparent_pixels(self._nata_cool)
+        self._nata_boo = self._blacken_transparent_pixels(self._nata_boo)
+        self._nata_oops = self._blacken_transparent_pixels(self._nata_oops)
+        self._seba_cool = self._blacken_transparent_pixels(self._seba_cool)
+        self._seba_like = self._blacken_transparent_pixels(self._seba_like)
+        self._seba_oops = self._blacken_transparent_pixels(self._seba_oops)
+
+    @staticmethod
+    def _blacken_transparent_pixels(
+        image: np.ndarray,
+    ) -> np.ndarray:
+        opaque_black_bgra = (0, 0, 0, 255)
+        new_image = np.array(image)
+        not_fully_opaque = new_image[:, :, 3] < 255
+
+        new_image[not_fully_opaque] = [*opaque_black_bgra]
+
+        return new_image
 
     def _calculate_side_character_size(self) -> tuple[int, int]:
         maze_width = self._render_maze.fb.width
         maze_height = self._render_maze.fb.height
         maze_x = self._render_maze.get_maze_position()
         right_space = self._mlx_ctx.win_width - maze_x - maze_width
-        available_width = max(1, min(maze_x, right_space) - _SIDE_CHARACTER_GAP)
+        available_width = max(1, min(maze_x, right_space)
+                              - _SIDE_CHARACTER_GAP)
         max_height_from_width = int(
             available_width / _SIDE_CHARACTER_ASPECT_RATIO
         )
