@@ -23,7 +23,7 @@ class Inky(Ghost):
             maze,
             "inky",
             start_cell,
-            speed_multiplier=1.9,
+            speed_multiplier=2.5,
         )
         self._target_cell: Optional[Tuple[int, int]] = None
         self._mode = "roam"

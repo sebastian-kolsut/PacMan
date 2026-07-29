@@ -21,7 +21,7 @@ class Character(ABC):
         self._maze = maze
         self._pos_x = 0.0
         self._pos_y = 0.0
-        self._speed = cell_size * 3.0
+        self._speed = cell_size * 4.0
         self._direction = Direction.RIGHT
         self._pending_direction = Direction.RIGHT
 

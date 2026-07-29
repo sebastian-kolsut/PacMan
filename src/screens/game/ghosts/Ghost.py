@@ -120,7 +120,8 @@ class Ghost(Character):
                 or self._direction not in valid_directions
             ):
                 if self._is_frightened:
-                    self._pending_direction = self._choose_flee_direction(pacman_cell)
+                    self._pending_direction = self._choose_flee_direction(
+                        pacman_cell)
                 else:
                     self._pending_direction = self._choose_direction(
                         pacman_cell,
@@ -159,7 +160,8 @@ class Ghost(Character):
             return pixels
 
         if self._is_frightened:
-            asset = self._blue_asset if self._show_blue_asset else self._normal_asset
+            asset = self._blue_asset if self._show_blue_asset else \
+                self._normal_asset
         else:
             asset = self._normal_asset
 

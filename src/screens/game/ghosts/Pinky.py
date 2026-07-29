@@ -22,7 +22,7 @@ class Pinky(Ghost):
             maze,
             "pinky",
             start_cell,
-            speed_multiplier=2.0,
+            speed_multiplier=2.8,
         )
 
     def _should_recalculate_direction(self) -> bool:

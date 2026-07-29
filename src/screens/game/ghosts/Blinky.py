@@ -22,7 +22,7 @@ class Blinky(Ghost):
             maze,
             "blinky",
             start_cell,
-            speed_multiplier=2.2,
+            speed_multiplier=3.0,
         )
 
     def _choose_direction(
