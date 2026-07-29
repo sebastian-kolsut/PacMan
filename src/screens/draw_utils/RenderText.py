@@ -40,6 +40,9 @@ class RenderText:
 
         return len
 
+    def get_text_height(self) -> int:
+        return self._font_height
+
     def _load_font_images(
             self, font_file: str
     ) -> Tuple[Dict[str, NDArray[np.uint8]], Dict[str, int]]:

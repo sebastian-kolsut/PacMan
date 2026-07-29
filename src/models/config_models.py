@@ -5,7 +5,7 @@ from typing import List, Dict
 _DEFAULT_WIDTH = 10
 _DEFAULT_HEIGHT = 10
 
-_DEFAULT_HIGHSCORE_FILENAME = "highscores.txt"
+_DEFAULT_HIGHSCORE_FILENAME = "highscores.json"
 _DEFAULT_LIVES = 3
 _DEFAULT_POINTS_PER_PACGUM = 10
 _DEFAULT_POINTS_PER_SUPER_PACGUM = 50
@@ -65,7 +65,7 @@ class Config(BaseModel):
 
     @field_validator("highscore_filename", mode="before")
     def set_highscore_filename_if_invalid(cls, value: str) -> str:
-        if not isinstance(value, str) or not value.endswith(".txt"):
+        if not isinstance(value, str) or not value.endswith(".json"):
             print("Error: Invalid highscore_filename - " +
                   f"clamped to safe default {_DEFAULT_HIGHSCORE_FILENAME}")
             return _DEFAULT_HIGHSCORE_FILENAME

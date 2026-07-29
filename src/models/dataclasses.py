@@ -9,10 +9,12 @@ class Screen(Enum):
     MAIN_MENU = auto()
     GAME_PLAYING = auto()
     INSTRUCTIONS = auto()
+    HIGHSCORES = auto()
     WIN_OR_LOSE = auto()
 
 
 class Direction(int, Enum):
+
     UP = 0
     RIGHT = 1
     DOWN = 2
@@ -20,6 +22,7 @@ class Direction(int, Enum):
 
 
 class GameState(Enum):
+
     LOST = auto()
     WON = auto()
     PLAYING = auto()

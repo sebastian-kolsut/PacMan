@@ -1,5 +1,6 @@
 from src.models.dataclasses import ProgramState, MlxContext, Screen
-from src.screens import PlayGame, MainMenu, InstructionsScreen, WinLoseScreen
+from src.screens import PlayGame, MainMenu, InstructionsScreen, \
+    WinLoseScreen, HighscoresScreen
 from typing import Set
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
@@ -19,12 +20,14 @@ KEY_ENTER = 65293
 class MainGameLoop:
 
     def __init__(self) -> None:
-        self._config = Parser().parse("tests/jsons/valid_no_comments.json")
+        self._config = Parser().parse("config.json")
         self._state = ProgramState()
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._instructions_screen = InstructionsScreen(self._mlx_ctx)
-        self._lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
+        self._highscores = HighscoresScreen(self._config.highscore_filename,
+                                            self._mlx_ctx)
+        self._win_lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
         self._pressed_keys: Set[int] = set()
 
@@ -51,8 +54,10 @@ class MainGameLoop:
                 self._game_screen.render()
             case Screen.INSTRUCTIONS:
                 self._instructions_screen.render()
+            case Screen.HIGHSCORES:
+                self._highscores.render()
             case Screen.WIN_OR_LOSE:
-                self._lose_screen.render()
+                self._win_lose_screen.render()
 
         return 0
 
@@ -69,7 +74,9 @@ class MainGameLoop:
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
             return 0
 
-        if keycode == KEY_ESCAPE and self._state.screen == Screen.INSTRUCTIONS:
+        if keycode == KEY_ESCAPE and \
+                (self._state.screen == Screen.INSTRUCTIONS
+                 or self._state.screen == Screen.HIGHSCORES):
             self._state.screen = Screen.MAIN_MENU
             return 0
 
@@ -95,7 +102,7 @@ class MainGameLoop:
         elif action == "settings":
             print(" not active yet")
         elif action == "highscores":
-            print(" not active yet")
+            self._state.screen = Screen.HIGHSCORES
 
     def _init_mlx(self) -> MlxContext:
         m = Mlx()
