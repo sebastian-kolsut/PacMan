@@ -16,7 +16,7 @@ class Pacgums:
                  maze: Maze, config: Config
                  ) -> None:
         self._cell_size = cell_size
-        self._size_pacgum = int(cell_size * 0.18)
+        self._size_pacgum = int(cell_size * 0.20)
         self._size_super = int(cell_size * 0.3)
         self._fb = FrameBuffer(mlx_ctx, self._size_pacgum, self._size_pacgum)
         self._img_pacgum = self._create_pacgum_image(self._size_pacgum,

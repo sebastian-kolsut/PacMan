@@ -18,6 +18,7 @@ _PATTERN_CELL = 0b1111
 _PINK = (255, 184, 219, 255)
 _NO_COLOR = (0, 0, 0, 0)
 _PINK_PATTERN = (255, 184, 219, 165)
+_SOFT_PATTERN = (253, 241, 236, 255)
 
 
 class RenderMaze:
