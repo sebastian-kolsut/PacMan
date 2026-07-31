@@ -13,8 +13,8 @@ _ASSETS_DIR = Path("assets/menu")
 _TITLE_WIDTH = 1200
 _TITLE_HEIGHT = 415
 
-_BUTTON_WIDTH = 660
-_BUTTON_HEIGHT = 120
+_BUTTON_WIDTH = 1188
+_BUTTON_HEIGHT = 180
 
 _BUTTON_GAP = 8
 _SIDE_CHARACTER_GAP_SCALE = 0.015
@@ -25,6 +25,8 @@ KEY_SPACE = 32
 KEY_ENTER = 65293
 KEY_UP = 65362
 KEY_DOWN = 65364
+KEY_W = 119
+KEY_S = 115
 
 
 class MainMenu:
@@ -130,10 +132,10 @@ class MainMenu:
         )
 
     def handle_key(self, keycode: int) -> str | None:
-        if keycode == KEY_UP:
+        if keycode in (KEY_UP, KEY_W):
             self.move_selection_up()
             return None
-        if keycode == KEY_DOWN:
+        if keycode in (KEY_DOWN, KEY_S):
             self.move_selection_down()
             return None
         if keycode in (KEY_ENTER, KEY_SPACE):

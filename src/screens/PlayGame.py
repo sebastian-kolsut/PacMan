@@ -125,8 +125,8 @@ class PlayGame:
                 return key
         return 0
 
-    def handle_key(self, keycode: int) -> None:
-        self._pause.update(keycode)
+    def handle_key(self, keycode: int) -> str | None:
+        return self._pause.update(keycode)
 
     def update(self, delta_time: float) -> None:
 
@@ -231,6 +231,9 @@ class PlayGame:
 
         self._fb.commit()
         self._fb.put_image_to_window()
+
+    def get_image(self) -> np.ndarray:
+        return self._fb.get_array()
 
     def _draw_side_characters(
         self,

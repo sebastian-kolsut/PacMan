@@ -57,17 +57,20 @@ class MainGameLoop:
             case Screen.HIGHSCORES:
                 self._highscores.render()
             case Screen.WIN_OR_LOSE:
-                self._win_lose_screen.render()
+                self._win_lose_screen.render(self._game_screen.get_image())
 
         return 0
 
     def on_key(self, keycode: int, param) -> int:
         if self._state.screen == Screen.WIN_OR_LOSE:
-            if keycode == KEY_ENTER:
+            action = self._win_lose_screen.handle_key(keycode)
+            if action == "restart":
                 self._restart_game()
-            elif keycode == KEY_ESCAPE:
+            elif action == "main_menu":
                 self._reset_game()
                 self._state.screen = Screen.MAIN_MENU
+            elif action is not None:
+                self._activate_main_menu_action(action)
             return 0
 
         if keycode == KEY_ESCAPE and self._state.screen == Screen.MAIN_MENU:
@@ -87,7 +90,11 @@ class MainGameLoop:
             return 0
 
         if self._state.screen == Screen.GAME_PLAYING:
-            self._game_screen.handle_key(keycode)
+            action = self._game_screen.handle_key(keycode)
+            if action == "restart":
+                self._restart_game()
+            elif action == "settings":
+                self._activate_main_menu_action(action)
             return 0
 
         return 0
