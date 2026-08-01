@@ -222,8 +222,8 @@ class MainMenu:
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
             image,
-            y,
             x,
+            y,
         )
 
     def _draw_side_characters(
@@ -241,14 +241,14 @@ class MainMenu:
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
             self._nata,
-            character_y,
             button_left - gap - self._side_character_width,
+            character_y,
         )
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
             self._seba,
-            character_y,
             button_right + gap,
+            character_y,
         )
 
     def _calculate_asset_sizes(self) -> tuple[int, int, int, int, int, int]:

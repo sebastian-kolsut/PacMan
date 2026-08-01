@@ -22,8 +22,11 @@ class Score:
 
     def render(self, main_screen: NDArray[np.uint8]) -> None:
         if self._dirty:
-            FrameBuffer.draw_blended_tile(main_screen, self._img, 150, 20)
+            FrameBuffer.draw_blended_tile(main_screen, self._img, 20, 150)
             return
 
         self._img = self._render_txt.put_text_to_image(self._score_txt)
-        FrameBuffer.draw_blended_tile(main_screen, self._img, 150, 20)
+        FrameBuffer.draw_blended_tile(main_screen, self._img, 20, 150)
+
+    def get_score(self) -> int:
+        return self._score

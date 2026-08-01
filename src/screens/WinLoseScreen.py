@@ -4,7 +4,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 from src.models.dataclasses import MlxContext, ProgramState, GameState
-from src.screens.draw_utils.FrameBuffer import FrameBuffer
+from src.screens.draw_utils import FrameBuffer, RenderText
+from src.Highscores import Highscores
 
 
 KEY_ESCAPE = 65307
@@ -14,6 +15,11 @@ KEY_UP = 65362
 KEY_DOWN = 65364
 KEY_W = 119
 KEY_S = 115
+KEY_BACKSPACE = 65288
+
+_DIGIT_KEYS = range(48, 58)
+_UPPER_LETTER_KEYS = range(65, 91)
+_LOWER_LETTER_KEYS = range(97, 123)
 
 _ASSETS_DIR = "assets/menu/win_lose_pause_menu"
 _GAME_OVER_IMAGE = f"{_ASSETS_DIR}/gameover.png"
@@ -34,11 +40,21 @@ _BUTTON_GAP = 16
 _KINDA_BLACK = (10, 0, 8, 255)
 _TRANSPARENT = (0, 0, 0, 0)
 
+_FONT_SIZE = 0.165
+_TYPING_FIELD_Y = 0.6
+
+_MAX_NAME_LEN = 10
+
 
 class WinLoseScreen:
     def __init__(self, mlx_ctx: MlxContext, state: ProgramState) -> None:
         self._mlx_ctx = mlx_ctx
         self._state = state
+        self._input_name = False
+        self._checked = False
+        self._name = ""
+        self._render_txt = RenderText("assets/fonts/ByteBounce.ttf",
+                                      mlx_ctx, _FONT_SIZE)
         self._fb = FrameBuffer(
             mlx_ctx,
             mlx_ctx.win_width,
@@ -101,6 +117,21 @@ class WinLoseScreen:
         }
 
     def handle_key(self, keycode: int) -> str | None:
+        if self._input_name:
+            if keycode == KEY_ENTER and self._name:
+                self._input_name = False
+                self._checked = True
+                self._scores.add_score(self._name, self._score)
+                self._scores.write_scores()
+            elif keycode == KEY_BACKSPACE:
+                self._name = self._name[:-1]
+            if len(self._name) < _MAX_NAME_LEN:
+                if keycode in _DIGIT_KEYS or keycode in _UPPER_LETTER_KEYS:
+                    self._name += chr(keycode)
+                elif keycode in _LOWER_LETTER_KEYS:
+                    self._name += chr(keycode).upper()
+            return None
+
         actions = self._get_actions()
 
         if keycode == KEY_ESCAPE:
@@ -119,19 +150,31 @@ class WinLoseScreen:
 
         return None
 
+    def update(self, is_eligible: bool, scores: Highscores,
+               score: int) -> None:
+        self._scores = scores
+        self._score = score
+        if is_eligible and not self._checked:
+            self._input_name = True
+            return
+
     def render(self, game_image: NDArray[np.uint8]) -> None:
         pixels = self._fb.get_array()
         pixels[:, :, :] = game_image
         FrameBuffer.draw_blended_tile(pixels, self._overlay, 0, 0)
 
-        header = self._headers.get(self._state.state, self._headers[GameState.LOST])
+        header = self._headers.get(self._state.state,
+                                   self._headers[GameState.LOST])
         FrameBuffer.draw_blended_tile(
             pixels,
             header,
-            self._header_y,
             self._header_x,
+            self._header_y,
         )
-        self._draw_buttons(pixels, header.shape[0])
+        if self._input_name:
+            self._draw_typing_field(pixels)
+        else:
+            self._draw_buttons(pixels, header.shape[0])
 
         self._fb.commit()
         self._fb.put_image_to_window()
@@ -147,6 +190,16 @@ class WinLoseScreen:
             _TRANSPARENT,
             image,
         )
+
+    def _draw_typing_field(self, img: NDArray[np.uint8]) -> None:
+        txt = "ENTER NAME: "
+
+        center_x = self._mlx_ctx.win_width // 2
+        y = int(self._mlx_ctx.win_height * _TYPING_FIELD_Y)
+        x = center_x - (self._render_txt.get_text_width(txt + self._name) // 2)
+
+        txt_img = self._render_txt.put_text_to_image(txt + self._name)
+        self._fb.draw_blended_tile(img, txt_img, x, y)
 
     def _load_button(
         self,
@@ -175,8 +228,8 @@ class WinLoseScreen:
             FrameBuffer.draw_blended_tile(
                 pixels,
                 image,
-                y,
                 self._get_centered_x(image.shape[1]),
+                y,
             )
 
     def _get_actions(self) -> list[str]:

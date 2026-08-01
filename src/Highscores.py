@@ -4,7 +4,6 @@ from typing import List
 
 _MAX_ENTRIES = 10
 _MAX_NAME_LENGHT = 10
-_MAX_LINE_LENGHT = 30
 
 
 class NameToLongError(Exception):
@@ -29,7 +28,6 @@ class HighscoresList(RootModel):
 
 class Highscores:
     def __init__(self, file_name: str):
-        print(file_name)
         self._file_name = file_name
 
         try:
@@ -37,6 +35,7 @@ class Highscores:
         except (FileNotFoundError, ValidationError):
             self._highscores = HighscoresList([])
             self.write_scores()
+        self._highscores.root.sort(key=lambda x: x.score, reverse=True)
 
     def add_score(self, name: str, score: int) -> None:
         temp_name = name.replace(" ", "a")
@@ -56,16 +55,12 @@ class Highscores:
         with open(self._file_name, "w") as f:
             f.write(json_str)
 
-    def get_leaderboard(self) -> List[str]:
-        leaderboard: List[str] = []
+    def get_leaderboard(self) -> HighscoresList:
+        return self._highscores
 
-        for i, record in enumerate(self._highscores.root, 1):
-            spaces = _MAX_LINE_LENGHT - (len(f"{i}. {record.name}") +
-                                         len(str(record.score)))
-            leaderboard.append(f"{i}. {record.name}" + " " * spaces
-                               + str(record.score))
-
-        return leaderboard
+    def is_score_eligible(self, score: int) -> bool:
+        return score > self._highscores.root[-1].score or \
+            len(self._highscores.root) < _MAX_ENTRIES
 
     def _load_file(self) -> HighscoresList:
         with open(self._file_name, "r") as f:

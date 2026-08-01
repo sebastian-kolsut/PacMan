@@ -26,8 +26,8 @@ class Lives:
         for i in range(self._max_lives):
             heart_image = 0 if i < self._lives_count else 1
             FrameBuffer.draw_blended_tile(
-                main_screen, self._assets[heart_image], 20,
-                int(self._mlx_ctx.win_width * 0.8) + i * self.size)
+                main_screen, self._assets[heart_image],
+                int(self._mlx_ctx.win_width * 0.8) + i * self.size, 20)
 
     def _load_assets(self, size: int) -> Tuple[NDArray[np.uint8],
                                                NDArray[np.uint8]]:

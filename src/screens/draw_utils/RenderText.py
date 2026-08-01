@@ -27,7 +27,7 @@ class RenderText:
         x_pos = 0
         for char in text:
             FrameBuffer.draw_blended_tile(image, self._font_images[char],
-                                          0, x_pos)
+                                          x_pos, 0)
             x_pos += int(self._char_widths[char])
 
         return image

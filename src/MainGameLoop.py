@@ -1,4 +1,5 @@
 from src.models.dataclasses import ProgramState, MlxContext, Screen
+from src.Highscores import Highscores
 from src.screens import PlayGame, MainMenu, InstructionsScreen, \
     WinLoseScreen, HighscoresScreen
 from typing import Set
@@ -25,8 +26,8 @@ class MainGameLoop:
         self._mlx_ctx = self._init_mlx()
         self._main_menu_screen = MainMenu(self._mlx_ctx)
         self._instructions_screen = InstructionsScreen(self._mlx_ctx)
-        self._highscores = HighscoresScreen(self._config.highscore_filename,
-                                            self._mlx_ctx)
+        self._scores = Highscores(self._config.highscore_filename)
+        self._highscores = HighscoresScreen(self._scores, self._mlx_ctx)
         self._win_lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
         self._pressed_keys: Set[int] = set()
@@ -57,6 +58,10 @@ class MainGameLoop:
             case Screen.HIGHSCORES:
                 self._highscores.render()
             case Screen.WIN_OR_LOSE:
+                score = self._game_screen.get_final_score()
+                self._win_lose_screen.update(
+                    self._scores.is_score_eligible(score), self._scores, score
+                    )
                 self._win_lose_screen.render(self._game_screen.get_image())
 
         return 0

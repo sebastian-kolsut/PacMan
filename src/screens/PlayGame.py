@@ -128,6 +128,9 @@ class PlayGame:
     def handle_key(self, keycode: int) -> str | None:
         return self._pause.update(keycode)
 
+    def get_final_score(self) -> int:
+        return self._hud.get_score()
+
     def update(self, delta_time: float) -> None:
 
         if self._game_over:
@@ -209,8 +212,8 @@ class PlayGame:
         self._pacgums.draw_super_to_image(pixels, maze_x)
         self._fb.draw_blended_tile(
             pixels, pac_img,
+            int(self._pac_man._pos_x) + self._pac_man._offset + maze_x,
             int(self._pac_man._pos_y) + self._pac_man._offset,
-            int(self._pac_man._pos_x) + self._pac_man._offset + maze_x
             )
 
         for ghost in self._ghosts:
@@ -220,8 +223,8 @@ class PlayGame:
             self._fb.draw_blended_tile(
                 pixels,
                 ghost_img,
-                ghost_y,
                 ghost_x + maze_x,
+                ghost_y,
             )
 
         self._hud.render(pixels)

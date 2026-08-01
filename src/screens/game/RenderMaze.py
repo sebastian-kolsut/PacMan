@@ -85,7 +85,7 @@ class RenderMaze:
                 _NICE_COLOR, _NICE_PATTERN, self._walls[mask])
 
         self.fb.draw_blended_tile(pixels, img,
-                                  y * self._cell_size, x * self._cell_size)
+                                  x * self._cell_size, y * self._cell_size)
 
     def _get_pattern_mask(self, idx: int) -> int:
         mask = _PATTERN_CELL
