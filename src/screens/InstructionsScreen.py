@@ -37,8 +37,8 @@ class InstructionsScreen:
         FrameBuffer.draw_blended_tile(
             pixels,
             self._image,
-            y,
             x,
+            y,
         )
 
         self._fb.commit()

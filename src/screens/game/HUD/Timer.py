@@ -37,7 +37,7 @@ class Timer:
             self._image = self._render_txt.put_text_to_image(self._time_str)
 
         FrameBuffer.draw_blended_tile(main_screen, self._image, 20, 20)
-        FrameBuffer.draw_blended_tile(main_screen, self.fps, 80, 20)
+        FrameBuffer.draw_blended_tile(main_screen, self.fps, 20, 80)
 
         return self._image
 

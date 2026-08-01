@@ -1,12 +1,34 @@
 [
-  {"name": "AAA", "score": 5000},
-  {"name": "BBB", "score": 4200},
-  {"name": "CCC", "score": 3800},
-  {"name": "DDD", "score": 2500},
-  {"name": "EEE", "score": 1000},
-  {"name": "FFF", "score": 800},
-  {"name": "GGG", "score": 600},
-  {"name": "HHH", "score": 400},
-  {"name": "III", "score": 200},
-  {"name": "JJJ", "score": 100}
+  {
+    "name": "JJJJJJJJJJ",
+    "score": 200000
+  },
+  {
+    "name": "AAA",
+    "score": 5000
+  },
+  {
+    "name": "BBB",
+    "score": 4200
+  },
+  {
+    "name": "CCC",
+    "score": 3800
+  },
+  {
+    "name": "DDD",
+    "score": 2500
+  },
+  {
+    "name": "SEBASTIAN",
+    "score": 1570
+  },
+  {
+    "name": "HDJL",
+    "score": 60
+  },
+  {
+    "name": "GIT",
+    "score": 30
+  }
 ]

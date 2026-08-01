@@ -110,24 +110,24 @@ class PauseScreen:
         if not self._is_paused:
             if keycode == KEY_ESCAPE:
                 self._is_paused = True
-            return
+            return None
 
         if keycode == KEY_ESCAPE:
             self._is_paused = False
             self._game_state.screen = Screen.MAIN_MENU
-            return
+            return None
 
         if keycode in (KEY_UP, KEY_W):
             self._selected_index = (self._selected_index - 1) % len(
                 self._actions
             )
-            return
+            return None
 
         if keycode in (KEY_DOWN, KEY_S):
             self._selected_index = (self._selected_index + 1) % len(
                 self._actions
             )
-            return
+            return None
 
         if keycode in (KEY_ENTER, KEY_SPACE):
             return self._activate_selected_action()
@@ -137,7 +137,7 @@ class PauseScreen:
     def render(self, image: NDArray[np.uint8]) -> None:
         self._img[:, :] = np.array(MAIN_TINT, dtype=np.uint8)
         self._fb.draw_blended_tile(self._img, self._pause_tile,
-                                   self._img_pos_y, self._img_pos_x)
+                                   self._img_pos_x, self._img_pos_y)
         self._draw_buttons()
 
         self._fb.draw_blended_tile(image, self._img, 0, 0)
@@ -152,7 +152,7 @@ class PauseScreen:
                 self._button_height + _BUTTON_GAP
             ) - (image.shape[0] - self._button_height) // 2
             x = self._get_postion_x_centered(image.shape[1])
-            FrameBuffer.draw_blended_tile(self._img, image, y, x)
+            FrameBuffer.draw_blended_tile(self._img, image, x, y)
 
     def _get_button_image(
         self,

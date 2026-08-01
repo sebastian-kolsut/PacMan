@@ -34,8 +34,8 @@ class FrameBuffer:
     def draw_blended_tile(
             pixels: NDArray[np.uint8],
             tile: NDArray[np.uint8],
-            y0: int,
-            x0: int) -> None:
+            x0: int,
+            y0: int) -> None:
         tile_h, tile_w = tile.shape[0], tile.shape[1]
         y1, x1 = y0 + tile_h, x0 + tile_w
 
