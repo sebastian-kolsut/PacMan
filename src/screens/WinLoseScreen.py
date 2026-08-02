@@ -123,6 +123,7 @@ class WinLoseScreen:
                 self._checked = True
                 self._scores.add_score(self._name, self._score)
                 self._scores.write_scores()
+                self._name = ""
             elif keycode == KEY_BACKSPACE:
                 self._name = self._name[:-1]
             if len(self._name) < _MAX_NAME_LEN:
@@ -146,6 +147,7 @@ class WinLoseScreen:
             return None
 
         if keycode in (KEY_ENTER, KEY_SPACE):
+            self._checked = False
             return actions[self._selected_index]
 
         return None
