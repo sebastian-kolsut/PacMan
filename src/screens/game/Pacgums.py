@@ -27,6 +27,7 @@ class Pacgums:
         self._offset = cell_size // 2 - self._size_pacgum // 2
         self._super_offset = cell_size // 2 - self._size_super // 2
         self._maze = maze
+        self._config = config
         self._layout = self._create_pacgum_layout(maze, config.pacgum)
         self._super_layout = self._create_super_pacgum_layout(maze)
         self._points_per_pacgum = config.points_per_pacgum

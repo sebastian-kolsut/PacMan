@@ -28,11 +28,13 @@ class RenderMaze:
     def __init__(self, mlx_ctx: MlxContext, maze: Maze):
         self._maze = maze
         self._mlx_ctx = mlx_ctx
+
         maze_width_px, maze_height_px, cell_size = \
-            self._get_maze_size_pixels(mlx_ctx)
+            self._get_maze_size_pixels(self._mlx_ctx)
         self._cell_size = cell_size
 
-        self.fb = FrameBuffer(mlx_ctx, maze_width_px, maze_height_px)
+        self.fb = FrameBuffer(self._mlx_ctx, maze_width_px, maze_height_px)
+
         self._walls = self._load_walls()
         self._pixels = self.fb.get_array()
 

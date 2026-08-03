@@ -4,6 +4,7 @@ from .RenderMaze import RenderMaze
 from .Pacgums import Pacgums
 from .ghosts import Ghost, Blinky, Clyde, Pinky, Inky
 from .PauseScreen import PauseScreen
+from .LevelScreen import LevelScreen
 
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "Clyde",
     "Pinky",
     "Inky",
-    "PauseScreen"
+    "PauseScreen",
+    "LevelScreen"
 ]

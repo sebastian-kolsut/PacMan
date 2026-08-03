@@ -1,6 +1,8 @@
 from src.models import Config, MlxContext
 from src.models.dataclasses import ProgramState, Screen, GameState
-from src.screens.game import RenderMaze, Maze, PacMan, Pacgums, PauseScreen
+from src.screens.game import (
+    RenderMaze, Maze, PacMan, Pacgums, PauseScreen, LevelScreen,
+)
 from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky
 from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
@@ -37,41 +39,57 @@ class PlayGame:
                  program_state: ProgramState) -> None:
         self._mlx_ctx = mlx_ctx
         self._program_state = program_state
-        self._current_level = 0
         self._config = config
         self._maze = Maze(config)
-        self._render_maze = RenderMaze(mlx_ctx, self._maze)
-        cell_size = self._render_maze.get_cell_size()
-        self._pacgums = Pacgums(cell_size, mlx_ctx, self._maze, config)
         self._hud = HUD(config, mlx_ctx)
         self._lives = getattr(config, "lives", 3)
         self._game_over = False
         self._respawn_delay = 0.0
         self._ghost_edible_timer = 0.0
         self._pause = PauseScreen(mlx_ctx, program_state)
-        self._pac_man = PacMan(cell_size, mlx_ctx, self._maze, self._pacgums)
+        self._level_screen = LevelScreen(mlx_ctx)
+        self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
+        self._regenerate_maze_assets()
+        self._seba_like_timer = 0.0
+        self._oops_timer = 0.0
+        self._last_pressed_key = 0
+
+        self._keyboard = Display()
+        self._direction_keycodes = {
+            key: self._keyboard.keysym_to_keycode(key)
+            for key in _DIRECTION_KEYS
+        }
+
+    def _regenerate_maze_assets(self) -> None:
+        self._render_maze = RenderMaze(self._mlx_ctx, self._maze)
+        cell_size = self._render_maze.get_cell_size()
+        self._pacgums = Pacgums(
+            cell_size, self._mlx_ctx, self._maze, self._config,
+        )
+        self._pac_man = PacMan(
+            cell_size, self._mlx_ctx, self._maze, self._pacgums,
+        )
         self._ghosts = [
-            Blinky(cell_size, mlx_ctx, self._maze, (0, 0)),
+            Blinky(cell_size, self._mlx_ctx, self._maze, (0, 0)),
             Clyde(
                 cell_size,
-                mlx_ctx,
+                self._mlx_ctx,
                 self._maze,
                 (self._maze.width - 1, 0),
             ),
             Pinky(
                 cell_size,
-                mlx_ctx,
+                self._mlx_ctx,
                 self._maze,
                 (self._maze.width - 1, self._maze.height - 1),
             ),
             Inky(
                 cell_size,
-                mlx_ctx,
+                self._mlx_ctx,
                 self._maze,
                 (0, self._maze.height - 1),
             ),
         ]
-        self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         (
             self._side_character_width,
             self._side_character_height,
@@ -107,15 +125,7 @@ class PlayGame:
             self._side_character_height,
         )
         self._replace_side_character_transparency_with_black()
-        self._seba_like_timer = 0.0
-        self._oops_timer = 0.0
-        self._last_pressed_key = 0
-
-        self._keyboard = Display()
-        self._direction_keycodes = {
-            key: self._keyboard.keysym_to_keycode(key)
-            for key in _DIRECTION_KEYS
-        }
+        self._level_screen.show(self._maze.level + 1)
 
     def _get_pressed_direction(self) -> int:
         keymap = self._keyboard.query_keymap()
@@ -138,9 +148,18 @@ class PlayGame:
             self._program_state.state = GameState.LOST
             return
 
+        if self._level_screen.is_active():
+            self._level_screen.update(delta_time)
+            return
+
         if self._pacgums.is_level_won():
-            self._program_state.screen = Screen.WIN_OR_LOSE
-            self._program_state.state = GameState.WON
+            self._maze.level += 1
+            if self._maze.level < len(self._config.levels):
+                self._maze.generate_new_maze()
+                self._regenerate_maze_assets()
+            else:
+                self._program_state.screen = Screen.WIN_OR_LOSE
+                self._program_state.state = GameState.WON
             return
 
         if self._pause.is_game_paused():
@@ -231,6 +250,8 @@ class PlayGame:
 
         if self._pause.is_game_paused():
             self._pause.render(pixels)
+
+        self._level_screen.render(pixels)
 
         self._fb.commit()
         self._fb.put_image_to_window()

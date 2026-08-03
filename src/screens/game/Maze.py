@@ -27,7 +27,6 @@ class Maze:
         self.dirty = False
 
         self.generate_new_maze()
-        self.patters_positions = self._load_42_patern_positions()
 
     def generate_new_maze(self):
         self.width = self.config.levels[self.level].width
@@ -41,6 +40,7 @@ class Maze:
                 self._set_cell_value(x, y, mazegen, self.width)
 
         self.dirty = False
+        self.patters_positions = self._load_42_patern_positions()
 
     def is_wall_up(self, bit_idx: int) -> bool:
         return (self.bitboards.up & (1 << bit_idx)) != 0
