@@ -157,6 +157,9 @@ class PlayGame:
             if self._maze.level < len(self._config.levels):
                 self._maze.generate_new_maze()
                 self._regenerate_maze_assets()
+            else:
+                self._program_state.screen = Screen.WIN_OR_LOSE
+                self._program_state.state = GameState.WON
             return
 
         if self._pause.is_game_paused():
