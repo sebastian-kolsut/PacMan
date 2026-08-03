@@ -36,8 +36,12 @@ class PacMan(Character):
         self._animation = 0
         self._points = 0
         self._ate_super_pacgum = False
-        self._pos_x = float((maze.width // 2) * cell_size)
-        self._pos_y = float((maze.height // 2) * cell_size)
+        self._pos_x = \
+            float((maze.width // 2 - 1) * cell_size) if maze.width % 2 == 0 \
+            else float((maze.width // 2) * cell_size)
+        self._pos_y = \
+            float((maze.height // 2 - 1) * cell_size) if maze.height % 2 == 0 \
+            else float((maze.height // 2) * cell_size)
         self._direction = Direction.RIGHT
         self._pending_direction = Direction.RIGHT
         self._save_start_state()
