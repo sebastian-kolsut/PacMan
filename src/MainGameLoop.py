@@ -1,4 +1,4 @@
-from src.models.dataclasses import ProgramState, MlxContext, Screen
+from src.models.dataclasses import ProgramState, MlxContext, Screen, GameState
 from src.Highscores import Highscores
 from src.screens import PlayGame, MainMenu, InstructionsScreen, \
     WinLoseScreen, HighscoresScreen
@@ -149,4 +149,5 @@ class MainGameLoop:
 
     def _restart_game(self) -> None:
         self._reset_game()
+        self._state.state = GameState.PLAYING
         self._state.screen = Screen.GAME_PLAYING

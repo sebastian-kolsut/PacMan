@@ -87,6 +87,8 @@ class Pacgums:
                            (maze.width * maze.height)
                            - 1 and maze.width * (maze.height - 1)]
 
+        pacgum_amount = min(pacgum_amount, len(available_cells))
+
         for _ in range(pacgum_amount):
             idx = random.choice(available_cells)
             layout |= (1 << idx)

@@ -59,8 +59,9 @@ class Highscores:
         return self._highscores
 
     def is_score_eligible(self, score: int) -> bool:
-        return score > self._highscores.root[-1].score or \
-            len(self._highscores.root) < _MAX_ENTRIES
+        if len(self._highscores.root) < _MAX_ENTRIES:
+            return True
+        return score > self._highscores.root[-1].score
 
     def _load_file(self) -> HighscoresList:
         with open(self._file_name, "r") as f:
