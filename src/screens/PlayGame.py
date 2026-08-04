@@ -62,6 +62,10 @@ class PlayGame:
 
     def _regenerate_maze_assets(self) -> None:
         self._render_maze = RenderMaze(self._mlx_ctx, self._maze)
+        self._hud.set_maze_bounds(
+            self._render_maze.get_maze_position(),
+            self._render_maze.fb.width,
+        )
         cell_size = self._render_maze.get_cell_size()
         self._pacgums = Pacgums(
             cell_size, self._mlx_ctx, self._maze, self._config,

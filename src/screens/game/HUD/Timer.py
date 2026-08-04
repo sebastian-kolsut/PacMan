@@ -30,19 +30,38 @@ class Timer:
 
         return self._time_left > 0
 
-    def render(self, main_screen: NDArray[np.uint8]) -> NDArray[np.uint8]:
+    def render_time(
+        self,
+        main_screen: NDArray[np.uint8],
+        x: int,
+        y: int,
+    ) -> NDArray[np.uint8]:
+        image = self.get_time_image()
+        FrameBuffer.draw_blended_tile(main_screen, image, x, y)
+
+        return image
+
+    def get_time_image(self) -> NDArray[np.uint8]:
         new_time = self._format_time()
         if new_time != self._time_str:
             self._time_str = new_time
             self._image = self._render_txt.put_text_to_image(self._time_str)
 
-        FrameBuffer.draw_blended_tile(main_screen, self._image, 20, 20)
-        FrameBuffer.draw_blended_tile(main_screen, self.fps, 20, 80)
-
         return self._image
+
+    def render_fps(
+        self,
+        main_screen: NDArray[np.uint8],
+        x: int,
+        y: int,
+    ) -> None:
+        FrameBuffer.draw_blended_tile(main_screen, self.get_fps_image(), x, y)
+
+    def get_fps_image(self) -> NDArray[np.uint8]:
+        return self.fps
 
     def _format_time(self) -> str:
         now = int(round(self._time_left))
         minutes, seconds = divmod(now, 60)
 
-        return f"Time left: {minutes:02d}:{seconds:02d}"
+        return f"{minutes:02d}:{seconds:02d}"
