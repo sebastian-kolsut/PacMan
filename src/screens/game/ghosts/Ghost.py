@@ -1,6 +1,5 @@
-from collections import deque
 from random import choice
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from numpy.typing import NDArray
 
@@ -8,6 +7,8 @@ from src.models import Direction
 from src.models.dataclasses import MlxContext
 from src.screens.game.Character import Character
 from src.screens.game.Maze import Maze
+from src.screens.game.Pathfinder import Pathfinder
+from src.screens.game.ghosts.GhostState import GhostState
 
 
 _GHOST_ASSETS = {
@@ -19,20 +20,10 @@ _GHOST_ASSETS = {
 
 _BLUE_GHOST_ASSET = "assets/ghosts/blue_ghost.png"
 
-_DIRECTIONS = [
-    Direction.UP,
-    Direction.RIGHT,
-    Direction.DOWN,
-    Direction.LEFT,
-]
-
-
 _DEFAULT_SPEED_MULTIPLIER = 2.0
 _MIN_SPEED_MULTIPLIER = 1.8
 _MAX_SPEED_MULTIPLIER = 5.0
 _FRIGHTENED_SPEED_MULTIPLIER = 1.8
-_RESPAWN_DELAY = 5.0
-_BLINK_INTERVAL = 0.20
 
 
 class Ghost(Character):
@@ -47,6 +38,7 @@ class Ghost(Character):
         speed_multiplier: float = _DEFAULT_SPEED_MULTIPLIER,
     ) -> None:
         super().__init__(cell_size, mlx_ctx, maze)
+        self._pathfinder = Pathfinder(maze)
 
         self._asset = self._fb.get_image_array(
             _GHOST_ASSETS[asset_name],
@@ -60,12 +52,7 @@ class Ghost(Character):
             self._character_size,
             self._character_size,
         )
-        self._is_frightened = False
-        self._is_eaten = False
-        self._is_blinking = False
-        self._blink_timer = 0.0
-        self._show_blue_asset = True
-        self._respawn_timer = 0.0
+        self._state = GhostState()
         self._normal_speed_multiplier = speed_multiplier
 
         start_x, start_y = start_cell
@@ -86,29 +73,15 @@ class Ghost(Character):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> None:
-        if self._is_eaten:
-            self._respawn_timer -= delta_time
-
-            if self._respawn_timer <= 0:
-                self._is_eaten = False
-                self._respawn_timer = 0.0
-                self._is_frightened = False
-                self._is_blinking = False
-                self._blink_timer = 0.0
-                self._show_blue_asset = False
+        if self._state.is_eaten:
+            if self._state.update(delta_time):
                 self.set_speed_multiplier(self._normal_speed_multiplier)
                 self.reset_position()
-
             return
 
-        if self._is_blinking:
-            self._blink_timer -= delta_time
+        self._state.update(delta_time)
 
-            if self._blink_timer <= 0:
-                self._blink_timer = _BLINK_INTERVAL
-                self._show_blue_asset = not self._show_blue_asset
-
-        if self._is_close_to_cell_center():
+        if self._is_close_to_cell_center(delta_time):
             self._snap_to_cell()  # round cell
 
             valid_directions = self._get_valid_directions()
@@ -119,7 +92,7 @@ class Ghost(Character):
                 self._should_recalculate_direction()
                 or self._direction not in valid_directions
             ):
-                if self._is_frightened:
+                if self._state.is_frightened:
                     self._pending_direction = self._choose_flee_direction(
                         pacman_cell)
                 else:
@@ -136,7 +109,7 @@ class Ghost(Character):
             self._snap_to_cell()
             valid_directions = self._get_valid_directions()
             if valid_directions:
-                if self._is_frightened:
+                if self._state.is_frightened:
                     self._direction = self._choose_flee_direction(pacman_cell)
                 else:
                     self._direction = self._choose_direction(
@@ -156,11 +129,11 @@ class Ghost(Character):
         pixels = self._fb.get_array()
         pixels[:, :] = [0, 0, 0, 0]
 
-        if self._is_eaten:
+        if self._state.is_eaten:
             return pixels
 
-        if self._is_frightened:
-            asset = self._blue_asset if self._show_blue_asset else \
+        if self._state.is_frightened:
+            asset = self._blue_asset if self._state.show_blue_asset else \
                 self._normal_asset
         else:
             asset = self._normal_asset
@@ -194,9 +167,9 @@ class Ghost(Character):
 
     def _choose_bfs_direction(self, target_cell: Tuple[int, int]) -> Direction:
         start_cell = self._get_current_cell()
-        path = self._find_path(start_cell, target_cell)
+        direction = self._pathfinder.next_direction(start_cell, target_cell)
 
-        if len(path) < 2:
+        if direction is None:
             valid_directions = self._get_valid_directions()
             if self._direction in valid_directions:
                 return self._direction
@@ -204,130 +177,12 @@ class Ghost(Character):
                 return choice(valid_directions)
             return self._direction
 
-        next_cell = path[1]
-        return self._direction_to_cell(start_cell, next_cell)
-
-    def _find_path(
-        self,
-        start_cell: Tuple[int, int],
-        target_cell: Tuple[int, int],
-    ) -> List[Tuple[int, int]]:
-        queue = deque([start_cell])
-        came_from: Dict[Tuple[int, int], Tuple[int, int] | None] = {
-            start_cell: None,
-        }
-
-        while queue:
-            current_cell = queue.popleft()
-
-            if current_cell == target_cell:
-                break
-
-            for next_cell in self._get_neighbor_cells(current_cell):
-                if next_cell not in came_from:
-                    came_from[next_cell] = current_cell
-                    queue.append(next_cell)
-
-        if target_cell not in came_from:
-            return []
-
-        path = []
-        current: Tuple[int, int] | None = target_cell
-
-        while current is not None:
-            path.append(current)
-            current = came_from[current]
-
-        path.reverse()
-        return path
-
-    def _get_neighbor_cells(
-        self,
-        cell: Tuple[int, int],
-    ) -> List[Tuple[int, int]]:
-        cell_x, cell_y = cell
-        neighbors = []
-
-        for direction in _DIRECTIONS:
-            if self._can_move_from_cell(cell_x, cell_y, direction):
-                neighbors.append(
-                    self._get_next_cell_from_direction(
-                        cell_x,
-                        cell_y,
-                        direction,
-                    )
-                )
-
-        return neighbors
+        return direction
 
     def _get_valid_directions(self) -> List[Direction]:
-        cell_x, cell_y = self._get_current_cell()
-        valid_directions = []
-
-        for direction in _DIRECTIONS:
-            if self._can_move_from_cell(cell_x, cell_y, direction):
-                valid_directions.append(direction)
-
-        return valid_directions
-
-    def _can_move_from_cell(
-        self,
-        cell_x: int,
-        cell_y: int,
-        direction: Direction,
-    ) -> bool:
-        next_x, next_y = self._get_next_cell_from_direction(
-            cell_x,
-            cell_y,
-            direction,
+        return self._pathfinder.get_valid_directions(
+            self._get_current_cell(),
         )
-
-        if (
-            next_x < 0
-            or next_x >= self._maze.width
-            or next_y < 0
-            or next_y >= self._maze.height
-        ):
-            return False
-
-        cell_idx = cell_y * self._maze.width + cell_x
-        return not self._maze.is_wall_direction(cell_idx, direction)
-
-    def _get_next_cell_from_direction(
-        self,
-        cell_x: int,
-        cell_y: int,
-        direction: Direction,
-    ) -> Tuple[int, int]:
-        if direction == Direction.UP:
-            return cell_x, cell_y - 1
-        if direction == Direction.RIGHT:
-            return cell_x + 1, cell_y
-        if direction == Direction.DOWN:
-            return cell_x, cell_y + 1
-        if direction == Direction.LEFT:
-            return cell_x - 1, cell_y
-
-        return cell_x, cell_y
-
-    def _direction_to_cell(
-        self,
-        current_cell: Tuple[int, int],
-        next_cell: Tuple[int, int],
-    ) -> Direction:
-        current_x, current_y = current_cell
-        next_x, next_y = next_cell
-
-        if next_y < current_y:
-            return Direction.UP
-        if next_x > current_x:
-            return Direction.RIGHT
-        if next_y > current_y:
-            return Direction.DOWN
-        if next_x < current_x:
-            return Direction.LEFT
-
-        return self._direction
 
     def _get_random_valid_direction(self) -> Direction:
         valid_directions = self._get_valid_directions()
@@ -347,7 +202,7 @@ class Ghost(Character):
 
     def _get_random_reachable_cell(self) -> Tuple[int, int]:
         current_cell = self._get_current_cell()
-        reachable_cells = self._get_reachable_cells(current_cell)
+        reachable_cells = self._pathfinder.get_reachable_cells(current_cell)
 
         if len(reachable_cells) <= 1:
             return current_cell
@@ -360,42 +215,19 @@ class Ghost(Character):
 
         return choice(reachable_cells)
 
-    def _get_reachable_cells(
-        self,
-        start_cell: Tuple[int, int],
-    ) -> List[Tuple[int, int]]:
-        queue = deque([start_cell])
-        visited = {start_cell}
-
-        while queue:
-            current_cell = queue.popleft()
-
-            for next_cell in self._get_neighbor_cells(current_cell):
-                if next_cell not in visited:
-                    visited.add(next_cell)
-                    queue.append(next_cell)
-
-        return list(visited)
-
     def set_frightened(self, is_frightened: bool) -> None:
-        if self._is_eaten:
+        if self._state.is_eaten:
             return
 
-        self._is_frightened = is_frightened
+        self._state.set_frightened(is_frightened)
 
         if is_frightened:
-            self._is_blinking = False
-            self._blink_timer = 0.0
-            self._show_blue_asset = True
             self.set_speed_multiplier(_FRIGHTENED_SPEED_MULTIPLIER)
         else:
-            self._is_blinking = False
-            self._blink_timer = 0.0
-            self._show_blue_asset = False
             self.set_speed_multiplier(self._normal_speed_multiplier)
 
     def is_frightened(self) -> bool:
-        return self._is_frightened
+        return self._state.is_frightened
 
     def _choose_flee_direction(
         self,
@@ -413,9 +245,8 @@ class Ghost(Character):
         best_distance = -1
 
         for direction in valid_directions:
-            next_x, next_y = self._get_next_cell_from_direction(
-                current_x,
-                current_y,
+            next_x, next_y = self._pathfinder.get_next_cell(
+                (current_x, current_y),
                 direction,
             )
 
@@ -428,23 +259,11 @@ class Ghost(Character):
         return best_direction
 
     def eat(self) -> None:
-        self._is_eaten = True
-        self._is_frightened = False
-        self._is_blinking = False
-        self._blink_timer = 0.0
-        self._show_blue_asset = False
-        self._respawn_timer = _RESPAWN_DELAY
+        self._state.eat()
         self.set_speed_multiplier(self._normal_speed_multiplier)
 
     def is_eaten(self) -> bool:
-        return self._is_eaten
+        return self._state.is_eaten
 
     def set_blinking(self, is_blinking: bool) -> None:
-        if self._is_eaten or not self._is_frightened:
-            return
-
-        self._is_blinking = is_blinking
-
-        if not is_blinking:
-            self._show_blue_asset = True
-            self._blink_timer = 0.0
+        self._state.set_blinking(is_blinking)

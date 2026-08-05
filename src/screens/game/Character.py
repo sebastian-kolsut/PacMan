@@ -136,8 +136,8 @@ class Character(ABC):
             round(self._pos_y / self._cell_size) * self._cell_size
         )
 
-    def _is_close_to_cell_center(self) -> bool:
-        tolerance = max(2.0, self._speed / 60.0)
+    def _is_close_to_cell_center(self, delta_time: float) -> bool:
+        tolerance = max(0.5, self._speed * delta_time * 0.5)
 
         x_remainder = self._pos_x % self._cell_size
         y_remainder = self._pos_y % self._cell_size
