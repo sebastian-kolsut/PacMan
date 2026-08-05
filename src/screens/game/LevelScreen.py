@@ -6,11 +6,11 @@ import numpy as np
 
 
 _FONT_FILE = "assets/fonts/ByteBounce.ttf"
-_FONT_SCALE = 0.35
+_FONT_SCALE = 0.15
 
-_TINT = (0, 0, 0, 230)
+_TINT = (0, 0, 0, 200)
 
-_DISPLAY_DURATION = 1.0
+_DISPLAY_DURATION = 0.7
 
 
 class LevelScreen:
