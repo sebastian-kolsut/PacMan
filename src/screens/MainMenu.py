@@ -60,7 +60,7 @@ class MainMenu:
             self._calculate_side_character_size()
 
         self._title = FrameBuffer.get_image_array(
-            str(_ASSETS_DIR / "title.png"),
+            str(_ASSETS_DIR / "title2.png"),
             self._title_width,
             self._title_height,
         )

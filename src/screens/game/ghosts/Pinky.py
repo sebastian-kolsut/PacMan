@@ -38,7 +38,10 @@ class Pinky(Ghost):
             pacman_direction,
         )
 
-        if not self._find_path(self._get_current_cell(), target_cell):
+        if not self._pathfinder.find_path(
+            self._get_current_cell(),
+            target_cell,
+        ):
             target_cell = pacman_cell
 
         return self._choose_bfs_direction(target_cell)
