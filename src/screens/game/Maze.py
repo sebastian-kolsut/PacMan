@@ -3,12 +3,15 @@ from src.models import Config
 from src.models import Direction
 from dataclasses import dataclass
 from typing import Set
+import random
 
 
 _UP = 0
 _RIGHT = 1
 _DOWN = 2
 _LEFT = 3
+
+_RANDOM_SEED_RANGE = (1, 1_000_000)
 
 
 @dataclass
@@ -31,7 +34,9 @@ class Maze:
     def generate_new_maze(self):
         self.width = self.config.levels[self.level].width
         self.height = self.config.levels[self.level].height
-        mazegen = MazeGenerator((self.width, self.height))
+        seed = self.config.seed if self.level == 0 \
+            else random.randint(*_RANDOM_SEED_RANGE)
+        mazegen = MazeGenerator((self.width, self.height), seed=seed)
 
         self._reset_bitboard()
 

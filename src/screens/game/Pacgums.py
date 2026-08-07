@@ -28,7 +28,8 @@ class Pacgums:
         self._super_offset = cell_size // 2 - self._size_super // 2
         self._maze = maze
         self._config = config
-        self._layout = self._create_pacgum_layout(maze, config.pacgum)
+        pacgum_amount = config.levels[maze.level].pacgum
+        self._layout = self._create_pacgum_layout(maze, pacgum_amount)
         self._super_layout = self._create_super_pacgum_layout(maze)
         self._points_per_pacgum = config.points_per_pacgum
         self._points_per_super = config.points_per_super_pacgum
@@ -83,9 +84,9 @@ class Pacgums:
 
         available_cells = [i for i in range(1, maze.width * maze.height)
                            if i not in maze.patters_positions and
-                           i != maze.width - 1 and i !=
-                           (maze.width * maze.height)
-                           - 1 and maze.width * (maze.height - 1)]
+                           i != maze.width - 1 and
+                           i != (maze.width * maze.height) - 1 and
+                           i != maze.width * (maze.height - 1)]
 
         pacgum_amount = min(pacgum_amount, len(available_cells))
 
