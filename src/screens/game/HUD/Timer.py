@@ -19,6 +19,9 @@ class Timer:
         self.fps = self._render_txt.put_text_to_image("0.00FPS")
         self._fps_timer = 0.0
 
+    def reset(self, time_for_level: float) -> None:
+        self._time_left = time_for_level
+
     def update(self, delta_time: float) -> bool:
         self._time_left -= delta_time
 
