@@ -7,20 +7,18 @@ import pytest
 _VALID_CONFIG = Config(
         highscore_filename="highscores.txt",
         lives=3,
-        pacgum=42,
         points_per_pacgum=10,
         points_per_super_pacgum=50,
         points_per_ghost=200,
         seed=42,
-        level_max_time=90,
         levels=[
-            LevelModel(width=20, height=20),
-            LevelModel(width=25, height=25),
-            LevelModel(width=30, height=15)
+            LevelModel(width=20, height=20, pacgum=42, level_max_time=90),
+            LevelModel(width=25, height=25, pacgum=42, level_max_time=90),
+            LevelModel(width=30, height=15, pacgum=42, level_max_time=90)
         ]
         )
 
-_VALID_CONFIG_DEFAULT = Config(pacgum=42)
+_VALID_CONFIG_DEFAULT = Config()
 
 
 def test_parsing_valid_config() -> None:
@@ -51,7 +49,7 @@ def test_parsing_invalid_missing_key() -> None:
 def test_parsing_invalid_pacgum_value() -> None:
     test_config = Parser().parse("tests/jsons/invalid_pacgum_value.json")
 
-    assert test_config.pacgum == 100
+    assert test_config.levels[0].pacgum == 96
 
 
 def test_parsing_invalid_highscore_file() -> None:

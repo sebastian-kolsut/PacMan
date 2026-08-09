@@ -22,7 +22,7 @@ _LABEL_WIDTH_SCALE = 0.12
 class HUD:
     def __init__(self, config: Config, mlx_ctx: MlxContext):
         self._mlx_ctx = mlx_ctx
-        self._timer = Timer(config.level_max_time, mlx_ctx)
+        self._timer = Timer(config.levels[0].level_max_time, mlx_ctx)
         self._lives = Lives(config.lives, mlx_ctx)
         self._score = Score(mlx_ctx)
         self._label_width = int(mlx_ctx.win_width * _LABEL_WIDTH_SCALE)
@@ -52,6 +52,9 @@ class HUD:
     def set_maze_bounds(self, maze_left: int, maze_width: int) -> None:
         self._maze_left = maze_left
         self._maze_right = maze_left + maze_width
+
+    def reset_timer(self, time_for_level: float) -> None:
+        self._timer.reset(time_for_level)
 
     def get_score(self) -> int:
         return self._score.get_score()

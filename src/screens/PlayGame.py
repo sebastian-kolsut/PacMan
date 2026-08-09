@@ -61,6 +61,9 @@ class PlayGame:
         }
 
     def _regenerate_maze_assets(self) -> None:
+        self._hud.reset_timer(
+            self._config.levels[self._maze.level].level_max_time,
+        )
         self._render_maze = RenderMaze(self._mlx_ctx, self._maze)
         self._hud.set_maze_bounds(
             self._render_maze.get_maze_position(),
