@@ -2,7 +2,7 @@ from .Timer import Timer
 from .Lives import Lives
 from .Score import Score
 from src.models import Config, MlxContext
-from src.screens.draw_utils import FrameBuffer
+from src.screens.draw_utils import FrameBuffer, RenderText
 
 from numpy.typing import NDArray
 import numpy as np
@@ -14,6 +14,7 @@ FONT_SIZE = 0.05
 _TIME_LEFT_LABEL = "assets/hud/time_left_label.png"
 _SCORE_LABEL = "assets/hud/score_label.png"
 _LIFE_LEFT_LABEL = "assets/hud/life_left_label_gold.png"
+_LEVEL_LABEL = "assets/hud/level_label.png"
 _LABEL_WIDTH = 410
 _LABEL_HEIGHT = 155
 _LABEL_WIDTH_SCALE = 0.12
@@ -25,6 +26,9 @@ class HUD:
         self._timer = Timer(config.levels[0].level_max_time, mlx_ctx)
         self._lives = Lives(config.lives, mlx_ctx)
         self._score = Score(mlx_ctx)
+        self._render_txt = RenderText(FONT_FILEPATH, mlx_ctx, FONT_SIZE)
+        self._level = 1
+        self._level_img = self._render_txt.put_text_to_image(str(self._level))
         self._label_width = int(mlx_ctx.win_width * _LABEL_WIDTH_SCALE)
         self._label_height = int(
             self._label_width * _LABEL_HEIGHT / _LABEL_WIDTH
@@ -44,6 +48,11 @@ class HUD:
             self._label_width,
             self._label_height,
         )
+        self._level_label = FrameBuffer.get_image_array(
+            _LEVEL_LABEL,
+            self._label_width,
+            self._label_height,
+        )
         self._margin = max(20, int(mlx_ctx.win_height * 0.03))
         self._gap = max(8, int(mlx_ctx.win_height * 0.01))
         self._maze_left = 0
@@ -58,6 +67,13 @@ class HUD:
 
     def get_score(self) -> int:
         return self._score.get_score()
+
+    def set_level(self, level: int) -> None:
+        if self._level == level:
+            return
+
+        self._level = level
+        self._level_img = self._render_txt.put_text_to_image(str(self._level))
 
     def update(self, delta_time: float, points: int, lives: int) -> bool:
         self._score.update(points)
@@ -114,3 +130,21 @@ class HUD:
             self._label_width - self._lives.get_width()
         ) // 2
         self._lives.render(main_screen_img, lives_x, lives_y)
+
+        level_label_y = lives_y + self._lives.size + self._gap
+        FrameBuffer.draw_blended_tile(
+            main_screen_img,
+            self._level_label,
+            lives_label_x,
+            level_label_y,
+        )
+        level_y = level_label_y + self._label_height + self._gap
+        level_x = lives_label_x + (
+            self._label_width - self._level_img.shape[1]
+        ) // 2
+        FrameBuffer.draw_blended_tile(
+            main_screen_img,
+            self._level_img,
+            level_x,
+            level_y,
+        )
