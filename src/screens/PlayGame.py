@@ -132,6 +132,7 @@ class PlayGame:
             self._side_character_height,
         )
         self._replace_side_character_transparency_with_black()
+        self._hud.set_level(self._maze.level + 1)
         self._level_screen.show(self._maze.level + 1)
 
     def _get_pressed_direction(self) -> int:
@@ -281,7 +282,7 @@ class PlayGame:
             ) else self._nata_cool
             seba_image = self._seba_like if self._seba_like_timer > 0 \
                 else self._seba_cool
-        y0 = self._render_maze.fb.height - self._side_character_height
+        y0 = self._mlx_ctx.win_height - self._side_character_height
         y1 = y0 + self._side_character_height
         x0_nata = maze_x - _SIDE_CHARACTER_GAP - self._side_character_width
         x1_nata = x0_nata + self._side_character_width
@@ -313,16 +314,18 @@ class PlayGame:
 
     def _calculate_side_character_size(self) -> tuple[int, int]:
         maze_width = self._render_maze.fb.width
-        maze_height = self._render_maze.fb.height
         maze_x = self._render_maze.get_maze_position()
         right_space = self._mlx_ctx.win_width - maze_x - maze_width
         available_width = max(1, min(maze_x, right_space)
                               - _SIDE_CHARACTER_GAP)
+        target_height = int(
+            self._mlx_ctx.win_height * _SIDE_CHARACTER_HEIGHT_SCALE
+        )
         max_height_from_width = int(
             available_width / _SIDE_CHARACTER_ASPECT_RATIO
         )
         height = max(1, min(
-            int(maze_height * _SIDE_CHARACTER_HEIGHT_SCALE),
+            target_height,
             max_height_from_width,
         ))
         width = max(1, int(height * _SIDE_CHARACTER_ASPECT_RATIO))
