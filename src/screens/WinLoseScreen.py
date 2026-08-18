@@ -29,6 +29,16 @@ _MAIN_MENU_BUTTON = f"{_ASSETS_DIR}/main_menu_button.png"
 _HIGHSCORES_BUTTON = f"{_ASSETS_DIR}/highscores_button.png"
 _SETTINGS_BUTTON = f"{_ASSETS_DIR}/settings_button.png"
 
+_ENTER_NAME_LABEL = "assets/menu/win_lose_pause_menu/enter_your_name_label.png"
+_YOUR_SCORE_LABEL = "assets/menu/win_lose_pause_menu/your_score_label.png"
+
+_INFO_LABEL_WIDTH = 760
+_INFO_LABEL_HEIGHT = 155
+_INFO_TEXT_GAP = 30
+_INFO_ROW_GAP = 18
+
+_INFO_FONT_SIZE = 0.075
+
 _HEADER_WIDTH = 2027
 _HEADER_HEIGHT = 776
 _BUTTON_WIDTH = 1188
@@ -55,10 +65,26 @@ class WinLoseScreen:
         self._name = ""
         self._render_txt = RenderText("assets/fonts/ByteBounce.ttf",
                                       mlx_ctx, _FONT_SIZE)
+        self._info_render_txt = RenderText(
+            "assets/fonts/ByteBounce.ttf",
+            mlx_ctx,
+            _INFO_FONT_SIZE,
+        )
         self._fb = FrameBuffer(
             mlx_ctx,
             mlx_ctx.win_width,
             mlx_ctx.win_height,
+        )
+        self._enter_name_label = FrameBuffer.get_image_array(
+            _ENTER_NAME_LABEL,
+            _INFO_LABEL_WIDTH,
+            _INFO_LABEL_HEIGHT,
+        )
+
+        self._your_score_label = FrameBuffer.get_image_array(
+            _YOUR_SCORE_LABEL,
+            _INFO_LABEL_WIDTH,
+            _INFO_LABEL_HEIGHT,
         )
         self._overlay = np.full(
             (mlx_ctx.win_height, mlx_ctx.win_width, 4),
@@ -174,7 +200,7 @@ class WinLoseScreen:
             self._header_y,
         )
         if self._input_name:
-            self._draw_typing_field(pixels)
+            self._draw_player_info(pixels)
         else:
             self._draw_buttons(pixels, header.shape[0])
 
@@ -191,6 +217,55 @@ class WinLoseScreen:
             _KINDA_BLACK,
             _TRANSPARENT,
             image,
+        )
+
+    def _draw_info_row(
+        self,
+        img: NDArray[np.uint8],
+        label_img: NDArray[np.uint8],
+        value: str,
+        y: int,
+    ) -> None:
+        value_img = self._info_render_txt.put_text_to_image(value)
+
+        label_x = int(self._mlx_ctx.win_width * 0.26)
+        value_x = label_x + label_img.shape[1] + _INFO_TEXT_GAP
+
+        label_y = y
+        value_y = y + (label_img.shape[0] - value_img.shape[0]) // 2
+
+        FrameBuffer.draw_blended_tile(
+            img,
+            label_img,
+            label_x,
+            label_y,
+        )
+
+        FrameBuffer.draw_blended_tile(
+            img,
+            value_img,
+            value_x,
+            value_y,
+        )
+
+    def _draw_player_info(self, img: NDArray[np.uint8]) -> None:
+        start_y = int(self._mlx_ctx.win_height * 0.48)
+        name_value = self._name if self._name else "_"
+
+        self._draw_info_row(
+            img,
+            self._enter_name_label,
+            name_value,
+            start_y,
+        )
+
+        score_y = start_y + _INFO_LABEL_HEIGHT + _INFO_ROW_GAP
+
+        self._draw_info_row(
+            img,
+            self._your_score_label,
+            str(self._score),
+            score_y,
         )
 
     def _draw_typing_field(self, img: NDArray[np.uint8]) -> None:

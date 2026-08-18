@@ -17,6 +17,15 @@ _A_UP, _A_RIGHT, _A_DOWN, _A_LEFT = 65362, 65363, 65364, 65361
 _DIRECTION_KEYS = (_W, _A, _S, _D,
                    _A_UP, _A_RIGHT, _A_DOWN, _A_LEFT)
 
+KEY_F1 = 65470
+KEY_F2 = 65471
+KEY_F3 = 65472
+KEY_F4 = 65473
+KEY_F5 = 65474
+
+_NORMAL_PACMAN_SPEED_MULTIPLIER = 4.0
+_FAST_PACMAN_SPEED_MULTIPLIER = 6.0
+
 _GHOST_EDIBLE_TIME = 7.0
 _GHOST_BLINK_TIME = 2.0
 _SEBA_LIKE_DURATION = 2.0
@@ -49,6 +58,11 @@ class PlayGame:
         self._pause = PauseScreen(mlx_ctx, program_state)
         self._level_screen = LevelScreen(mlx_ctx)
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
+
+        self._cheat_invincible = False
+        self._cheat_freeze_ghosts = False
+        self._cheat_fast_speed = False
+
         self._regenerate_maze_assets()
         self._seba_like_timer = 0.0
         self._oops_timer = 0.0
@@ -76,6 +90,12 @@ class PlayGame:
         self._pac_man = PacMan(
             cell_size, self._mlx_ctx, self._maze, self._pacgums,
         )
+
+        if self._cheat_fast_speed:
+            self._pac_man.set_speed_multiplier(_FAST_PACMAN_SPEED_MULTIPLIER)
+        else:
+            self._pac_man.set_speed_multiplier(_NORMAL_PACMAN_SPEED_MULTIPLIER)
+
         self._ghosts = [
             Blinky(cell_size, self._mlx_ctx, self._maze, (0, 0)),
             Clyde(
@@ -144,6 +164,44 @@ class PlayGame:
         return 0
 
     def handle_key(self, keycode: int) -> str | None:
+        if keycode == KEY_F1:
+            self._hud.show_cheat_codes()
+            self._cheat_invincible = not self._cheat_invincible
+            print(f"Cheat F1 Invincibility: {self._cheat_invincible}")
+            return None
+
+        if keycode == KEY_F2:
+            self._hud.show_cheat_codes()
+            self._cheat_freeze_ghosts = not self._cheat_freeze_ghosts
+            print(f"Cheat F2 Ghost freeze: {self._cheat_freeze_ghosts}")
+            return None
+
+        if keycode == KEY_F3:
+            self._hud.show_cheat_codes()
+            self._lives += 1
+            print(f"Cheat F3 Extra life: {self._lives}")
+            return None
+
+        if keycode == KEY_F4:
+            self._hud.show_cheat_codes()
+            self._cheat_fast_speed = not self._cheat_fast_speed
+
+            if self._cheat_fast_speed:
+                self._pac_man.set_speed_multiplier(
+                    _FAST_PACMAN_SPEED_MULTIPLIER)
+            else:
+                self._pac_man.set_speed_multiplier(
+                    _NORMAL_PACMAN_SPEED_MULTIPLIER)
+
+            print(f"Cheat F4 Fast speed: {self._cheat_fast_speed}")
+            return None
+
+        if keycode == KEY_F5:
+            self._hud.show_cheat_codes()
+            self._pacgums.clear_all()
+            print("Cheat F5 Level skip")
+            return None
+
         return self._pause.update(keycode)
 
     def get_final_score(self) -> int:
@@ -190,12 +248,13 @@ class PlayGame:
         pacman_cell = self._pac_man.get_cell_position()
         pacman_direction = self._pac_man.get_direction()
 
-        for ghost in self._ghosts:
-            ghost.update(
-                delta_time,
-                pacman_cell,
-                pacman_direction,
-            )
+        if not self._cheat_freeze_ghosts:
+            for ghost in self._ghosts:
+                ghost.update(
+                    delta_time,
+                    pacman_cell,
+                    pacman_direction,
+                )
 
         if self._respawn_delay <= 0:
             collided_ghost = self._get_collided_ghost()
@@ -205,7 +264,7 @@ class PlayGame:
                     collided_ghost.eat()
                     self._pac_man.add_points(self._config.points_per_ghost)
                     self._seba_like_timer = _SEBA_LIKE_DURATION
-                else:
+                elif not self._cheat_invincible:
                     self._lose_life()
 
                     if self._game_over:

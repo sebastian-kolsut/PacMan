@@ -19,16 +19,32 @@ _LABEL_WIDTH = 410
 _LABEL_HEIGHT = 155
 _LABEL_WIDTH_SCALE = 0.12
 
+_CHEAT_TEXTS = (
+    "F1 -> Invincibility",
+    "F2 -> Ghost freeze",
+    "F3 -> Extra life",
+    "F4 -> Fast speed",
+    "F5 -> Level skip",
+)
+CHEAT_FONT_SIZE = 0.022
+
 
 class HUD:
     def __init__(self, config: Config, mlx_ctx: MlxContext):
         self._mlx_ctx = mlx_ctx
         self._timer = Timer(config.levels[0].level_max_time, mlx_ctx)
         self._lives = Lives(config.lives, mlx_ctx)
+        self._current_lives = config.lives
         self._score = Score(mlx_ctx)
         self._render_txt = RenderText(FONT_FILEPATH, mlx_ctx, FONT_SIZE)
+        self._cheat_render_txt = RenderText(
+            FONT_FILEPATH,
+            mlx_ctx,
+            CHEAT_FONT_SIZE,
+        )
         self._level = 1
         self._level_img = self._render_txt.put_text_to_image(str(self._level))
+        self._show_cheat_codes = False
         self._label_width = int(mlx_ctx.win_width * _LABEL_WIDTH_SCALE)
         self._label_height = int(
             self._label_width * _LABEL_HEIGHT / _LABEL_WIDTH
@@ -75,11 +91,17 @@ class HUD:
         self._level = level
         self._level_img = self._render_txt.put_text_to_image(str(self._level))
 
+    def show_cheat_codes(self) -> None:
+        self._show_cheat_codes = True
+
     def update(self, delta_time: float, points: int, lives: int) -> bool:
+        self._current_lives = lives
         self._score.update(points)
         self._lives.update(lives)
+
         if not self._timer.update(delta_time):
             return False
+
         return True
 
     def render(self, main_screen_img: NDArray[np.uint8]) -> None:
@@ -131,6 +153,27 @@ class HUD:
         ) // 2
         self._lives.render(main_screen_img, lives_x, lives_y)
 
+        if self._current_lives > self._lives.get_max_lives():
+            lives_count_text = f"*{self._current_lives}"
+            lives_count_img = self._render_txt.put_text_to_image(lives_count_text)
+
+            lives_count_x = lives_x + self._lives.get_width() + self._gap
+            lives_count_y = lives_y + (
+                self._lives.size - lives_count_img.shape[0]
+            ) // 2
+
+            lives_count_x = max(0, min(
+                lives_count_x,
+                main_screen_img.shape[1] - lives_count_img.shape[1],
+            ))
+
+            FrameBuffer.draw_blended_tile(
+                main_screen_img,
+                lives_count_img,
+                lives_count_x,
+                lives_count_y,
+            )
+
         level_label_y = lives_y + self._lives.size + self._gap
         FrameBuffer.draw_blended_tile(
             main_screen_img,
@@ -148,3 +191,27 @@ class HUD:
             level_x,
             level_y,
         )
+        if self._show_cheat_codes:
+            cheat_y = level_y + self._level_img.shape[0] + self._gap
+
+            for cheat_text in _CHEAT_TEXTS:
+                cheat_img = self._cheat_render_txt.put_text_to_image(cheat_text)
+
+                cheat_x = lives_label_x + (
+                    self._label_width - cheat_img.shape[1]
+                ) // 2
+
+                cheat_x = max(0, min(
+                    cheat_x,
+                    main_screen_img.shape[1] - cheat_img.shape[1],
+                ))
+
+                if cheat_y + cheat_img.shape[0] <= main_screen_img.shape[0]:
+                    FrameBuffer.draw_blended_tile(
+                        main_screen_img,
+                        cheat_img,
+                        cheat_x,
+                        cheat_y,
+                    )
+
+                cheat_y += cheat_img.shape[0] + self._gap

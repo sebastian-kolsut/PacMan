@@ -79,6 +79,9 @@ class PacMan(Character):
     def add_points(self, points: int) -> None:
         self._points += points
 
+    def set_speed_multiplier(self, speed_multiplier: float) -> None:
+        self._speed = self._cell_size * speed_multiplier
+
     def get_cell_position(self) -> tuple[int, int]:
         return self._get_current_cell()
 
@@ -94,7 +97,7 @@ class PacMan(Character):
 
         cell_idx = self._get_cell_idx(next_pac_x, next_pac_y)
         points, ate_super = self._pacgums._eat_pacgum_if_there(cell_idx)
-        self._points = points
+        self._points += points
 
         if ate_super:
             self._ate_super_pacgum = True

@@ -21,9 +21,9 @@ _GHOST_ASSETS = {
 _BLUE_GHOST_ASSET = "assets/ghosts/blue_ghost.png"
 
 _DEFAULT_SPEED_MULTIPLIER = 2.0
-_MIN_SPEED_MULTIPLIER = 1.8
+_MIN_SPEED_MULTIPLIER = 1.2
 _MAX_SPEED_MULTIPLIER = 5.0
-_FRIGHTENED_SPEED_MULTIPLIER = 1.8
+_FRIGHTENED_SPEED_MULTIPLIER = 1.3
 
 
 class Ghost(Character):
@@ -233,30 +233,32 @@ class Ghost(Character):
         self,
         pacman_cell: Tuple[int, int],
     ) -> Direction:
-        valid_directions = self._get_valid_directions()
+        current_cell = self._get_current_cell()
+        reachable_cells = self._pathfinder.get_reachable_cells(current_cell)
 
-        if not valid_directions:
+        if len(reachable_cells) <= 1:
+            valid_directions = self._get_valid_directions()
+            if valid_directions:
+                return choice(valid_directions)
             return self._direction
 
-        current_x, current_y = self._get_current_cell()
+        reachable_cells = [
+            cell
+            for cell in reachable_cells
+            if cell != current_cell
+        ]
+
         pacman_x, pacman_y = pacman_cell
 
-        best_direction = valid_directions[0]
-        best_distance = -1
+        target_cell = max(
+            reachable_cells,
+            key=lambda cell: (
+                abs(cell[0] - pacman_x)
+                + abs(cell[1] - pacman_y)
+            ),
+        )
 
-        for direction in valid_directions:
-            next_x, next_y = self._pathfinder.get_next_cell(
-                (current_x, current_y),
-                direction,
-            )
-
-            distance = abs(next_x - pacman_x) + abs(next_y - pacman_y)
-
-            if distance > best_distance:
-                best_distance = distance
-                best_direction = direction
-
-        return best_direction
+        return self._choose_bfs_direction(target_cell)
 
     def eat(self) -> None:
         self._state.eat()

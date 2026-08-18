@@ -6,8 +6,15 @@
   "points_per_ghost": 200,
   "seed": 42,
   "levels": [
-    { "width": 15, "height": 15, "pacgum": 1, "level_max_time": 180 },
-    { "width": 25, "height": 25, "pacgum": 1, "level_max_time": 180 },
-    { "width": 30, "height": 15, "pacgum": 1, "level_max_time": 180 }
+    { "width": 15, "height": 15, "pacgum": 80, "level_max_time": 180 },
+    { "width": 18, "height": 18, "pacgum": 120, "level_max_time": 180 },
+    { "width": 20, "height": 20, "pacgum": 160, "level_max_time": 180 },
+    { "width": 22, "height": 22, "pacgum": 200, "level_max_time": 180 },
+    { "width": 25, "height": 25, "pacgum": 260, "level_max_time": 180 },
+    { "width": 28, "height": 25, "pacgum": 300, "level_max_time": 180 },
+    { "width": 30, "height": 25, "pacgum": 340, "level_max_time": 180 },
+    { "width": 32, "height": 28, "pacgum": 400, "level_max_time": 180 },
+    { "width": 35, "height": 30, "pacgum": 480, "level_max_time": 180 },
+    { "width": 38, "height": 32, "pacgum": 560, "level_max_time": 180 }
   ]
 }
