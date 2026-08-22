@@ -11,6 +11,7 @@ class Screen(Enum):
     INSTRUCTIONS = auto()
     HIGHSCORES = auto()
     WIN_OR_LOSE = auto()
+    SETTINGS = auto()
 
 
 class Direction(int, Enum):
