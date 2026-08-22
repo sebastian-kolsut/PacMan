@@ -24,9 +24,9 @@ class MainGameLoop:
         self._config = Parser().parse("config.json")
         self._state = ProgramState()
         self._mlx_ctx = self._init_mlx()
-        self._main_menu_screen = MainMenu(self._mlx_ctx)
-        self._instructions_screen = InstructionsScreen(self._mlx_ctx)
         self._scores = Highscores(self._config.highscore_filename)
+        self._main_menu_screen = MainMenu(self._mlx_ctx, self._scores)
+        self._instructions_screen = InstructionsScreen(self._mlx_ctx)
         self._highscores = HighscoresScreen(self._scores, self._mlx_ctx)
         self._win_lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
@@ -82,9 +82,13 @@ class MainGameLoop:
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
             return 0
 
-        if keycode == KEY_ESCAPE and \
-                (self._state.screen == Screen.INSTRUCTIONS
-                 or self._state.screen == Screen.HIGHSCORES):
+        if self._state.screen == Screen.INSTRUCTIONS:
+            action = self._instructions_screen.handle_key(keycode)
+            if action == "main_menu":
+                self._state.screen = Screen.MAIN_MENU
+            return 0
+
+        if keycode == KEY_ESCAPE and self._state.screen == Screen.HIGHSCORES:
             self._state.screen = Screen.MAIN_MENU
             return 0
 
@@ -110,6 +114,7 @@ class MainGameLoop:
         elif action == "exit":
             self._mlx_ctx.m.mlx_loop_exit(self._mlx_ctx.mlx_ptr)
         elif action == "instructions":
+            self._instructions_screen.reset()
             self._state.screen = Screen.INSTRUCTIONS
         elif action == "settings":
             print(" not active yet")

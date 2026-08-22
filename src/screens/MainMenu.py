@@ -4,8 +4,9 @@ import time
 import numpy as np
 from numpy.typing import NDArray
 
+from src.Highscores import Highscores
 from src.models.dataclasses import MlxContext
-from src.screens.draw_utils.FrameBuffer import FrameBuffer
+from src.screens.draw_utils import FrameBuffer, RenderText
 
 
 _ASSETS_DIR = Path("assets/menu")
@@ -18,8 +19,18 @@ _BUTTON_HEIGHT = 180
 
 _BUTTON_GAP = 8
 _SIDE_CHARACTER_GAP_SCALE = 0.015
-_SIDE_CHARACTER_HEIGHT_SCALE = 0.95
+_SIDE_CHARACTER_HEIGHT_SCALE = 0.90
 _CHARACTER_ASPECT_RATIO = 725 / 1800
+
+_TOP_HIGHSCORES_WIDTH = 600
+_TOP_HIGHSCORES_HEIGHT = 1200
+_TOP_HIGHSCORES_FONT_SCALE = 0.028
+_LEADERBOARD_TOP_PADDING = 0.12
+_LEADERBOARD_BOTTOM_PADDING = 0.96
+_MAX_MENU_HIGHSCORES = 10
+
+_WHITE = (255, 255, 255)
+_GOLD = (0, 220, 255)
 
 KEY_SPACE = 32
 KEY_ENTER = 65293
@@ -32,8 +43,9 @@ KEY_S = 115
 class MainMenu:
     """Render and control the main menu screen."""
 
-    def __init__(self, mlx_ctx: MlxContext) -> None:
+    def __init__(self, mlx_ctx: MlxContext, scores: Highscores) -> None:
         self._mlx_ctx = mlx_ctx
+        self._scores = scores
         self._fb = FrameBuffer(
             mlx_ctx,
             mlx_ctx.win_width,
@@ -58,6 +70,17 @@ class MainMenu:
         ) = self._calculate_asset_sizes()
         self._side_character_width, self._side_character_height = \
             self._calculate_side_character_size()
+        self._top_highscores_height = self._get_buttons_height()
+        self._top_highscores_width = int(
+            self._top_highscores_height
+            * _TOP_HIGHSCORES_WIDTH / _TOP_HIGHSCORES_HEIGHT
+        )
+        self._highscores_text = RenderText(
+            "assets/fonts/ByteBounce.ttf",
+            mlx_ctx,
+            _TOP_HIGHSCORES_FONT_SCALE,
+        )
+        self._leaderboard_entries: tuple[tuple[str, int], ...] | None = None
 
         self._title = FrameBuffer.get_image_array(
             str(_ASSETS_DIR / "title2.png"),
@@ -130,6 +153,12 @@ class MainMenu:
             self._side_character_width,
             self._side_character_height,
         )
+        self._top_highscores = FrameBuffer.get_image_array(
+            str(_ASSETS_DIR / "top_highscores1.png"),
+            self._top_highscores_width,
+            self._top_highscores_height,
+        )
+        self._leaderboard_image = self._top_highscores.copy()
 
     def handle_key(self, keycode: int) -> str | None:
         if keycode in (KEY_UP, KEY_W):
@@ -163,8 +192,9 @@ class MainMenu:
         )
 
         self._draw_centered(self._title, center_x, title_y)
-        self._draw_side_characters(first_button_y, buttons_height)
+        self._draw_menu_content(first_button_y, buttons_height)
 
+        button_center_x = self._get_menu_layout()["button_center_x"]
         for index, action in enumerate(self._actions):
             base_y = first_button_y + index * (
                 self._button_height + _BUTTON_GAP
@@ -172,7 +202,7 @@ class MainMenu:
             image = self._get_button_image(action, index)
 
             y = base_y - (image.shape[0] - self._button_height) // 2
-            self._draw_centered(image, center_x, y)
+            self._draw_centered(image, button_center_x, y)
 
         self._fb.commit()
         self._mlx_ctx.m.mlx_put_image_to_window(
@@ -226,14 +256,12 @@ class MainMenu:
             y,
         )
 
-    def _draw_side_characters(
+    def _draw_menu_content(
         self,
         first_button_y: int,
         buttons_height: int,
     ) -> None:
-        button_left = (self._mlx_ctx.win_width - self._button_width) // 2
-        button_right = button_left + self._button_width
-        gap = max(12, int(self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE))
+        layout = self._get_menu_layout()
         character_y = first_button_y + (
             buttons_height - self._side_character_height
         ) // 2
@@ -241,15 +269,101 @@ class MainMenu:
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
             self._nata,
-            button_left - gap - self._side_character_width,
+            layout["nata_x"],
             character_y,
+        )
+        self._update_leaderboard_image()
+        FrameBuffer.draw_blended_tile(
+            self._fb.get_array(),
+            self._leaderboard_image,
+            layout["leaderboard_x"],
+            first_button_y,
         )
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
             self._seba,
-            button_right + gap,
+            layout["seba_x"],
             character_y,
         )
+
+    def _get_menu_layout(self) -> dict[str, int]:
+        gap = max(12, int(
+            self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE
+        ))
+        content_width = (
+            self._side_character_width
+            + self._button_width
+            + self._top_highscores_width
+            + self._side_character_width
+            + 3 * gap
+        )
+        content_x = max(0, (self._mlx_ctx.win_width - content_width) // 2)
+        nata_x = content_x
+        button_left = nata_x + self._side_character_width + gap
+        leaderboard_x = button_left + self._button_width + gap
+        seba_x = leaderboard_x + self._top_highscores_width + gap
+
+        return {
+            "nata_x": nata_x,
+            "button_center_x": button_left + self._button_width // 2,
+            "leaderboard_x": leaderboard_x,
+            "seba_x": seba_x,
+        }
+
+    def _update_leaderboard_image(self) -> None:
+        entries = tuple(
+            (record.name, record.score)
+            for record in self._scores.get_leaderboard().root[
+                :_MAX_MENU_HIGHSCORES
+            ]
+        )
+        if entries == self._leaderboard_entries:
+            return
+
+        self._leaderboard_entries = entries
+        self._leaderboard_image = self._top_highscores.copy()
+        top_y = int(
+            self._top_highscores_height * _LEADERBOARD_TOP_PADDING
+        )
+        bottom_y = int(
+            self._top_highscores_height * _LEADERBOARD_BOTTOM_PADDING
+        )
+        row_height = (bottom_y - top_y) // _MAX_MENU_HIGHSCORES
+
+        for index, (name, score) in enumerate(entries, start=1):
+            y = top_y + (index - 1) * row_height
+            text_height = self._highscores_text.get_text_height()
+            self._draw_leaderboard_text(
+                f"{index}.",
+                0.16,
+                y,
+                align_right=True,
+                color=_GOLD if index == 1 else _WHITE,
+            )
+            row_color = _GOLD if index == 1 else _WHITE
+            self._draw_leaderboard_text(name, 0.24, y, color=row_color)
+            self._draw_leaderboard_text(
+                str(score),
+                0.90,
+                y + text_height,
+                align_right=True,
+                color=row_color,
+            )
+
+    def _draw_leaderboard_text(
+        self,
+        text: str,
+        x_scale: float,
+        y: int,
+        align_right: bool = False,
+        color: tuple[int, int, int] = _WHITE,
+    ) -> None:
+        image = self._highscores_text.put_text_to_image(text)
+        image[:, :, :3] = color
+        x = int(self._top_highscores_width * x_scale)
+        if align_right:
+            x -= image.shape[1]
+        FrameBuffer.draw_blended_tile(self._leaderboard_image, image, x, y)
 
     def _calculate_asset_sizes(self) -> tuple[int, int, int, int, int, int]:
         window_width = self._mlx_ctx.win_width
@@ -292,24 +406,15 @@ class MainMenu:
         )
 
     def _calculate_side_character_size(self) -> tuple[int, int]:
-        buttons_height = (
-            len(self._actions) * self._button_height
-            + (len(self._actions) - 1) * _BUTTON_GAP
-        )
-        gap = max(12, int(
-            self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE
-        ))
-        available_side_width = max(
-            1,
-            (self._mlx_ctx.win_width - self._button_width) // 2 - gap,
-        )
-        max_height_from_width = int(
-            available_side_width / _CHARACTER_ASPECT_RATIO
-        )
-        height = max(1, min(
-            int(buttons_height * _SIDE_CHARACTER_HEIGHT_SCALE),
-            max_height_from_width,
+        height = max(1, int(
+            self._get_buttons_height() * _SIDE_CHARACTER_HEIGHT_SCALE
         ))
         width = max(1, int(height * _CHARACTER_ASPECT_RATIO))
 
         return width, height
+
+    def _get_buttons_height(self) -> int:
+        return (
+            len(self._actions) * self._button_height
+            + (len(self._actions) - 1) * _BUTTON_GAP
+        )
