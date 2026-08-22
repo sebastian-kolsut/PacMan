@@ -21,7 +21,12 @@ class Lives:
         self._lives_count = lives
 
     def get_width(self) -> int:
+        if self._lives_count > self._max_lives:
+            return self.size
         return self._max_lives * self.size
+
+    def get_max_lives(self) -> int:
+        return self._max_lives
 
     def render(
         self,
@@ -29,13 +34,26 @@ class Lives:
         x: int,
         y: int,
     ) -> None:
-        heart_image = 0
+        if self._lives_count > self._max_lives:
+            FrameBuffer.draw_blended_tile(
+                main_screen,
+                self._assets[0],
+                x,
+                y,
+            )
+            return
 
         for i in range(self._max_lives):
             heart_image = 0 if i < self._lives_count else 1
             FrameBuffer.draw_blended_tile(
-                main_screen, self._assets[heart_image],
-                x + i * self.size, y)
+                main_screen,
+                self._assets[heart_image],
+                x + i * self.size,
+                y,
+            )
+
+    def get_current_lives(self) -> int:
+        return self._lives_count
 
     def _load_assets(self, size: int) -> Tuple[NDArray[np.uint8],
                                                NDArray[np.uint8]]:
@@ -43,7 +61,7 @@ class Lives:
                                                   size * 2)
         assets = spritesheet[:size, :size], spritesheet[:size, :size].copy()
         mask = FrameBuffer(self._mlx_ctx, size, size).get_array()
-        mask[:, :] = [0, 0, 0, 128]
+        mask[:, :] = [0, 0, 0, 178]
         FrameBuffer.draw_blended_tile(assets[1], mask, 0, 0)
 
         return assets

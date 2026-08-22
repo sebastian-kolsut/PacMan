@@ -36,7 +36,11 @@ class Maze:
         self.height = self.config.levels[self.level].height
         seed = self.config.seed if self.level == 0 \
             else random.randint(*_RANDOM_SEED_RANGE)
-        mazegen = MazeGenerator((self.width, self.height), seed=seed)
+        mazegen = MazeGenerator(
+            (self.width, self.height),
+            perfect=False,
+            seed=seed,
+        )
 
         self._reset_bitboard()
 
