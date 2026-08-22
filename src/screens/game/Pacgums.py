@@ -37,6 +37,10 @@ class Pacgums:
     def is_level_won(self) -> bool:
         return self._layout == 0 and self._super_layout == 0
 
+    def clear_all(self) -> None:
+        self._layout = 0
+        self._super_layout = 0
+
     def draw_pacgums_to_image(self, image: NDArray[np.uint8],
                               maze_pos_x: int) -> None:
         for i in range(self._maze.width * self._maze.height):
