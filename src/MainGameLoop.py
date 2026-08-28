@@ -32,7 +32,7 @@ class MainGameLoop:
         self._highscores = HighscoresScreen(self._scores, self._mlx_ctx)
         self._win_lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
-        self._settings_screen = SettingsScreen(self._mlx_ctx)
+        self._settings_screen = SettingsScreen(self._mlx_ctx, self._state)
         self._settings_return_screen = Screen.MAIN_MENU
         self._pressed_keys: Set[int] = set()
 
