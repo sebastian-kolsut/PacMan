@@ -37,6 +37,8 @@ class ProgramState:
     state: GameState = GameState.PLAYING
     frame_interval: float = 1 / 120
     wall_theme_index: int = 0
+    level: int = 0
+    music_volume: int = 5
 
 
 @dataclass

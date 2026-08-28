@@ -75,6 +75,7 @@ class PlayGame:
         }
 
     def _regenerate_maze_assets(self) -> None:
+        self._program_state.level = self._maze.level
         self._hud.reset_timer(
             self._config.levels[self._maze.level].level_max_time,
         )
