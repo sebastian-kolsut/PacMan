@@ -162,11 +162,8 @@ class SettingsScreen:
         hint_x = (self._mlx_ctx.win_width - self._hint_img.shape[1]) // 2
         hint_x = max(0, min(hint_x,
                             self._mlx_ctx.win_width - self._hint_img.shape[1]))
-        hint_y = self._panel_y + self._panel.shape[0] \
-            - self._hint_img.shape[0] - _HINT_MARGIN
-        hint_y = max(0, min(
-            hint_y, self._mlx_ctx.win_height - self._hint_img.shape[0],
-        ))
+        hint_y = self._panel_y + self._panel.shape[0] - \
+            self._hint_img.shape[0] * 5
 
         FrameBuffer.draw_blended_tile(pixels, self._hint_img, hint_x, hint_y)
 
