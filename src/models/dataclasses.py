@@ -11,6 +11,7 @@ class Screen(Enum):
     INSTRUCTIONS = auto()
     HIGHSCORES = auto()
     WIN_OR_LOSE = auto()
+    SETTINGS = auto()
 
 
 class Direction(int, Enum):
@@ -35,6 +36,7 @@ class ProgramState:
     last_frame_time: float = field(default_factory=time.time)
     state: GameState = GameState.PLAYING
     frame_interval: float = 1 / 120
+    wall_theme_index: int = 0
 
 
 @dataclass

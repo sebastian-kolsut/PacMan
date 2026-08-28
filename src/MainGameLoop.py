@@ -1,8 +1,10 @@
 from src.models.dataclasses import ProgramState, MlxContext, Screen, GameState
 from src.Highscores import Highscores
 from src.screens import PlayGame, MainMenu, InstructionsScreen, \
-    WinLoseScreen, HighscoresScreen
+    WinLoseScreen, HighscoresScreen, SettingsScreen
 from typing import Set
+from numpy.typing import NDArray
+import numpy as np
 from src.Parser import Parser
 from mlx import Mlx  # type: ignore[import-untyped]
 import time
@@ -30,6 +32,8 @@ class MainGameLoop:
         self._highscores = HighscoresScreen(self._scores, self._mlx_ctx)
         self._win_lose_screen = WinLoseScreen(self._mlx_ctx, self._state)
         self._game_screen = PlayGame(self._mlx_ctx, self._config, self._state)
+        self._settings_screen = SettingsScreen(self._mlx_ctx, self._state)
+        self._settings_return_screen = Screen.MAIN_MENU
         self._pressed_keys: Set[int] = set()
 
     def run(self) -> None:
@@ -63,10 +67,25 @@ class MainGameLoop:
                     self._scores.is_score_eligible(score), self._scores, score
                     )
                 self._win_lose_screen.render(self._game_screen.get_image())
+            case Screen.SETTINGS:
+                background, dim_background = self._get_settings_background()
+                self._settings_screen.render(background, dim_background)
 
         return 0
 
+    def _get_settings_background(self) -> tuple[NDArray[np.uint8], bool]:
+        if self._settings_return_screen == Screen.GAME_PLAYING:
+            # Already dimmed by PauseScreen - avoid dimming it twice.
+            return self._game_screen.get_image(), False
+        return self._main_menu_screen.get_image(), True
+
     def on_key(self, keycode: int, param) -> int:
+        if self._state.screen == Screen.SETTINGS:
+            action = self._settings_screen.handle_key(keycode)
+            if action == "close":
+                self._state.screen = self._settings_return_screen
+            return 0
+
         if self._state.screen == Screen.WIN_OR_LOSE:
             action = self._win_lose_screen.handle_key(keycode)
             if action == "restart":
@@ -103,10 +122,14 @@ class MainGameLoop:
             if action == "restart":
                 self._restart_game()
             elif action == "settings":
-                self._activate_main_menu_action(action)
+                self._open_settings(Screen.GAME_PLAYING)
             return 0
 
         return 0
+
+    def _open_settings(self, return_screen: Screen) -> None:
+        self._settings_return_screen = return_screen
+        self._state.screen = Screen.SETTINGS
 
     def _activate_main_menu_action(self, action: str) -> None:
         if action == "start":
@@ -117,7 +140,7 @@ class MainGameLoop:
             self._instructions_screen.reset()
             self._state.screen = Screen.INSTRUCTIONS
         elif action == "settings":
-            print(" not active yet")
+            self._open_settings(Screen.MAIN_MENU)
         elif action == "highscores":
             self._state.screen = Screen.HIGHSCORES
 

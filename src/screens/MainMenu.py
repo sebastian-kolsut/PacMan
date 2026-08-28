@@ -160,6 +160,9 @@ class MainMenu:
         )
         self._leaderboard_image = self._top_highscores.copy()
 
+    def get_image(self) -> NDArray[np.uint8]:
+        return self._fb.get_array()
+
     def handle_key(self, keycode: int) -> str | None:
         if keycode in (KEY_UP, KEY_W):
             self.move_selection_up()

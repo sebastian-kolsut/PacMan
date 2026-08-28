@@ -1,5 +1,6 @@
-from src.models.dataclasses import MlxContext
+from src.models.dataclasses import MlxContext, ProgramState
 from src.screens.game.Maze import Maze
+from src.screens.game.wall_themes import WALL_THEMES
 from typing import Tuple, Dict
 from src.screens.draw_utils import FrameBuffer
 from numpy.typing import NDArray
@@ -15,19 +16,21 @@ _MAZE_WIDTH_SCALE = 0.7
 
 _PATTERN_CELL = 0b1111
 
-_PINK = (255, 184, 219, 255)
-_NICE_COLOR = (157, 63, 253, 220)
-_NICE_PATTERN = (218, 180, 255, 210)
 _NO_COLOR = (0, 0, 0, 0)
-_PINK_PATTERN = (255, 184, 219, 165)
-_SOFT_PATTERN = (253, 241, 236, 255)
 
 
 class RenderMaze:
 
-    def __init__(self, mlx_ctx: MlxContext, maze: Maze):
+    def __init__(self, mlx_ctx: MlxContext, maze: Maze,
+                 program_state: ProgramState):
         self._maze = maze
         self._mlx_ctx = mlx_ctx
+        self._program_state = program_state
+
+        self._theme_index = program_state.wall_theme_index
+        theme = WALL_THEMES[self._theme_index]
+        self._base_color = theme.base_color
+        self._pattern_color = theme.pattern_color
 
         maze_width_px, maze_height_px, cell_size = \
             self._get_maze_size_pixels(self._mlx_ctx)
@@ -49,6 +52,8 @@ class RenderMaze:
         return self._cell_size
 
     def render(self) -> NDArray[np.uint8]:
+        self._sync_wall_theme()
+
         if self._maze.dirty:
             return self._pixels
 
@@ -84,7 +89,7 @@ class RenderMaze:
         if mask == _PATTERN_CELL:
             mask = self._get_pattern_mask(bit_idx)
             img = self.fb.swap_colors_in_image_leave_out(
-                _NICE_COLOR, _NICE_PATTERN, self._walls[mask])
+                self._base_color, self._pattern_color, self._walls[mask])
 
         self.fb.draw_blended_tile(pixels, img,
                                   x * self._cell_size, y * self._cell_size)
@@ -123,11 +128,25 @@ class RenderMaze:
 
         return maze_width_px, maze_height_px, cell_size
 
+    def _sync_wall_theme(self) -> None:
+        if self._program_state.wall_theme_index == self._theme_index:
+            return
+
+        theme = WALL_THEMES[self._program_state.wall_theme_index]
+        for mask, tile in self._walls.items():
+            self._walls[mask] = self.fb.swap_colors_in_image_color_to_color(
+                self._base_color, theme.base_color, tile)
+
+        self._theme_index = self._program_state.wall_theme_index
+        self._base_color = theme.base_color
+        self._pattern_color = theme.pattern_color
+        self._maze.dirty = False
+
     def _get_image_array_wall(self, file_name: str) -> NDArray[np.uint8]:
         img = self.fb.get_image_array(file_name, self._cell_size,
                                       self._cell_size)
         img = self.fb.swap_colors_in_image_leave_out(
-            _NO_COLOR, _NICE_COLOR, img)
+            _NO_COLOR, self._base_color, img)
 
         return img
 
