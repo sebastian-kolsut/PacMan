@@ -1,5 +1,6 @@
 from src.models.dataclasses import ProgramState, MlxContext, Screen, GameState
 from src.Highscores import Highscores
+from src.MusicPlayer import MusicPlayer
 from src.screens import PlayGame, MainMenu, InstructionsScreen, \
     WinLoseScreen, HighscoresScreen, SettingsScreen
 from typing import Set
@@ -25,6 +26,7 @@ class MainGameLoop:
     def __init__(self) -> None:
         self._config = Parser().parse("config.json")
         self._state = ProgramState()
+        self._music = MusicPlayer(self._state)
         self._mlx_ctx = self._init_mlx()
         self._scores = Highscores(self._config.highscore_filename)
         self._main_menu_screen = MainMenu(self._mlx_ctx, self._scores)
@@ -49,6 +51,8 @@ class MainGameLoop:
         delta_time = now - self._state.last_frame_time
         self._state.last_frame_time = time.time()
         delta_time = min(delta_time, 1 / 30)
+
+        self._music.update()
 
         # update() & render() for all
         match self._state.screen:

@@ -10,7 +10,9 @@ from src.screens.game.wall_themes import WALL_THEMES
 
 KEY_ESCAPE = 65307
 KEY_LEFT = 65361
+KEY_UP = 65362
 KEY_RIGHT = 65363
+KEY_DOWN = 65364
 
 _PANEL_IMAGE = "assets/menu/settings_panel.png"
 _PANEL_ASPECT_RATIO = 1536 / 1024
@@ -23,6 +25,19 @@ _SWATCH_SIZE = 40
 _LABEL_GAP = 16
 _HINT_TEXT = "ESC to close"
 _HINT_MARGIN = 24
+
+_ROW_GAP = 30
+
+_OPTION_WALL_COLOR = 0
+_OPTION_VOLUME = 1
+_OPTION_COUNT = 2
+
+_VOLUME_STEPS = 10
+_SEGMENT_WIDTH = 26
+_SEGMENT_HEIGHT = 34
+_SEGMENT_GAP = 4
+_SEGMENT_FILLED_COLOR = (255, 255, 255, 255)
+_SEGMENT_EMPTY_COLOR = (90, 90, 90, 255)
 
 
 class SettingsScreen:
@@ -55,19 +70,51 @@ class SettingsScreen:
             (0, 0, 4), dtype=np.uint8)
         self._sync_color_label()
 
+        self._selected_option = _OPTION_WALL_COLOR
+        self._volume_label_img = self._render_txt.put_text_to_image("Volume")
+        self._segment_filled_img = np.full(
+            (_SEGMENT_HEIGHT, _SEGMENT_WIDTH, 4),
+            _SEGMENT_FILLED_COLOR, dtype=np.uint8,
+        )
+        self._segment_empty_img = np.full(
+            (_SEGMENT_HEIGHT, _SEGMENT_WIDTH, 4),
+            _SEGMENT_EMPTY_COLOR, dtype=np.uint8,
+        )
+
         hint_render_txt = RenderText(FONT_FILEPATH, mlx_ctx, CHEAT_FONT_SIZE)
         self._hint_img = hint_render_txt.put_text_to_image(_HINT_TEXT)
 
     def handle_key(self, keycode: int) -> str | None:
         if keycode == KEY_ESCAPE:
             return "close"
+        if keycode == KEY_UP:
+            self._selected_option = (
+                self._selected_option - 1
+            ) % _OPTION_COUNT
+            return None
+        if keycode == KEY_DOWN:
+            self._selected_option = (
+                self._selected_option + 1
+            ) % _OPTION_COUNT
+            return None
         if keycode == KEY_LEFT:
-            self._cycle_wall_theme(-1)
+            self._adjust_selected_option(-1)
             return None
         if keycode == KEY_RIGHT:
-            self._cycle_wall_theme(1)
+            self._adjust_selected_option(1)
             return None
         return None
+
+    def _adjust_selected_option(self, step: int) -> None:
+        if self._selected_option == _OPTION_WALL_COLOR:
+            self._cycle_wall_theme(step)
+        else:
+            self._adjust_volume(step)
+
+    def _adjust_volume(self, step: int) -> None:
+        self._program_state.music_volume = max(
+            0, min(_VOLUME_STEPS, self._program_state.music_volume + step),
+        )
 
     def render(
         self,
@@ -84,7 +131,14 @@ class SettingsScreen:
         FrameBuffer.draw_blended_tile(
             pixels, self._panel, self._panel_x, self._panel_y,
         )
-        self._draw_color_picker(pixels)
+
+        color_content_height = self._color_row_content_height()
+        color_row_y = self._panel_y + int(self._panel.shape[0] * 0.45) \
+            - color_content_height // 2
+        volume_row_y = color_row_y + color_content_height + _ROW_GAP
+
+        self._draw_color_picker(pixels, color_row_y)
+        self._draw_volume_bar(pixels, volume_row_y)
         self._draw_close_hint(pixels)
 
         self._fb.commit()
@@ -108,13 +162,26 @@ class SettingsScreen:
             (_SWATCH_SIZE, _SWATCH_SIZE, 4), theme.base_color, dtype=np.uint8,
         )
 
-    def _draw_color_picker(self, pixels: NDArray[np.uint8]) -> None:
-        content_height = max(
+    def _color_row_content_height(self) -> int:
+        return max(
             self._arrow_left_img.shape[0],
             self._color_label_img.shape[0],
             self._swatch_img.shape[0],
             self._arrow_right_img.shape[0],
         )
+
+    def _volume_row_content_height(self) -> int:
+        return max(
+            self._arrow_left_img.shape[0],
+            self._volume_label_img.shape[0],
+            _SEGMENT_HEIGHT,
+            self._arrow_right_img.shape[0],
+        )
+
+    def _draw_color_picker(self, pixels: NDArray[np.uint8],
+                           row_y: int) -> None:
+        show_arrows = self._selected_option == _OPTION_WALL_COLOR
+        content_height = self._color_row_content_height()
         row_width = (
             self._arrow_left_img.shape[1] + _LABEL_GAP
             + self._color_label_img.shape[1] + _LABEL_GAP
@@ -122,17 +189,10 @@ class SettingsScreen:
             + self._arrow_right_img.shape[1]
         )
 
-        # Sit slightly above the panel's vertical center, leaving room
-        # below for future settings rows.
-        row_y = self._panel_y + int(self._panel.shape[0] * 0.45) \
-            - content_height // 2
         row_y = max(0, min(row_y, self._mlx_ctx.win_height - content_height))
         row_x = (self._mlx_ctx.win_width - row_width) // 2
         row_x = max(0, min(row_x, self._mlx_ctx.win_width - row_width))
 
-        arrow_left_y = row_y + (
-            content_height - self._arrow_left_img.shape[0]
-        ) // 2
         label_x = row_x + self._arrow_left_img.shape[1] + _LABEL_GAP
         label_y = row_y + (
             content_height - self._color_label_img.shape[0]
@@ -141,22 +201,81 @@ class SettingsScreen:
         swatch_y = row_y + (content_height - int(
             self._swatch_img.shape[0] * 0.8)) // 2
         arrow_right_x = swatch_x + self._swatch_img.shape[1] + _LABEL_GAP
-        arrow_right_y = row_y + (
-            content_height - self._arrow_right_img.shape[0]
-        ) // 2
 
-        FrameBuffer.draw_blended_tile(
-            pixels, self._arrow_left_img, row_x, arrow_left_y,
-        )
+        if show_arrows:
+            arrow_left_y = row_y + (
+                content_height - self._arrow_left_img.shape[0]
+            ) // 2
+            FrameBuffer.draw_blended_tile(
+                pixels, self._arrow_left_img, row_x, arrow_left_y,
+            )
+
         FrameBuffer.draw_blended_tile(
             pixels, self._color_label_img, label_x, label_y,
         )
         FrameBuffer.draw_blended_tile(
             pixels, self._swatch_img, swatch_x, swatch_y,
         )
-        FrameBuffer.draw_blended_tile(
-            pixels, self._arrow_right_img, arrow_right_x, arrow_right_y,
+
+        if show_arrows:
+            arrow_right_y = row_y + (
+                content_height - self._arrow_right_img.shape[0]
+            ) // 2
+            FrameBuffer.draw_blended_tile(
+                pixels, self._arrow_right_img, arrow_right_x, arrow_right_y,
+            )
+
+    def _draw_volume_bar(self, pixels: NDArray[np.uint8],
+                         row_y: int) -> None:
+        show_arrows = self._selected_option == _OPTION_VOLUME
+        content_height = self._volume_row_content_height()
+        bar_width = _VOLUME_STEPS * _SEGMENT_WIDTH \
+            + (_VOLUME_STEPS - 1) * _SEGMENT_GAP
+        row_width = (
+            self._arrow_left_img.shape[1] + _LABEL_GAP
+            + self._volume_label_img.shape[1] + _LABEL_GAP
+            + bar_width + _LABEL_GAP
+            + self._arrow_right_img.shape[1]
         )
+
+        row_y = max(0, min(row_y, self._mlx_ctx.win_height - content_height))
+        row_x = (self._mlx_ctx.win_width - row_width) // 2
+        row_x = max(0, min(row_x, self._mlx_ctx.win_width - row_width))
+
+        label_x = row_x + self._arrow_left_img.shape[1] + _LABEL_GAP
+        label_y = row_y + (
+            content_height - self._volume_label_img.shape[0]
+        ) // 2
+        bar_x = label_x + self._volume_label_img.shape[1] + _LABEL_GAP
+        bar_y = row_y + int((content_height - _SEGMENT_HEIGHT) * 1.38) // 2
+        arrow_right_x = bar_x + bar_width + _LABEL_GAP
+
+        if show_arrows:
+            arrow_left_y = row_y + (
+                content_height - self._arrow_left_img.shape[0]
+            ) // 2
+            FrameBuffer.draw_blended_tile(
+                pixels, self._arrow_left_img, row_x, arrow_left_y,
+            )
+
+        FrameBuffer.draw_blended_tile(
+            pixels, self._volume_label_img, label_x, label_y,
+        )
+
+        volume = self._program_state.music_volume
+        for i in range(_VOLUME_STEPS):
+            segment = self._segment_filled_img if i < volume \
+                else self._segment_empty_img
+            segment_x = bar_x + i * (_SEGMENT_WIDTH + _SEGMENT_GAP)
+            FrameBuffer.draw_blended_tile(pixels, segment, segment_x, bar_y)
+
+        if show_arrows:
+            arrow_right_y = row_y + (
+                content_height - self._arrow_right_img.shape[0]
+            ) // 2
+            FrameBuffer.draw_blended_tile(
+                pixels, self._arrow_right_img, arrow_right_x, arrow_right_y,
+            )
 
     def _draw_close_hint(self, pixels: NDArray[np.uint8]) -> None:
         hint_x = (self._mlx_ctx.win_width - self._hint_img.shape[1]) // 2
