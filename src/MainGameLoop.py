@@ -7,7 +7,7 @@ from typing import Set
 from numpy.typing import NDArray
 import numpy as np
 from src.Parser import Parser
-from mlx import Mlx  # type: ignore[import-untyped]
+from mlx import Mlx
 import time
 
 
@@ -22,9 +22,20 @@ KEY_ENTER = 65293
 
 
 class MainGameLoop:
+    """Owns the MLX window and dispatches updates/input to every screen."""
 
-    def __init__(self) -> None:
-        self._config = Parser().parse("config.json")
+    def __init__(self, config_file: str) -> None:
+        """Load the config, open the game window and build every screen.
+
+        Args:
+            config_file: Path to the JSON (with comments) config file.
+
+        Raises:
+            InvalidFileSufixError: If config_file does not end in ".json".
+            ValidationError: If the config content fails validation.
+            FileNotFoundError: If config_file does not exist.
+        """
+        self._config = Parser().parse(config_file)
         self._state = ProgramState()
         self._music = MusicPlayer(self._state)
         self._mlx_ctx = self._init_mlx()
@@ -39,9 +50,34 @@ class MainGameLoop:
         self._pressed_keys: Set[int] = set()
 
     def run(self) -> None:
+        """Start the blocking MLX event loop."""
         self._mlx_ctx.m.mlx_loop(self._mlx_ctx.mlx_ptr)
 
-    def game_loop(self, param) -> int:
+    def game_loop(self, param: object) -> int:
+        """MLX per-frame callback: update and render the active screen.
+
+        Any exception raised while updating or rendering is caught and
+        logged so a single bad frame cannot crash the whole game.
+
+        Args:
+            param: Unused MLX callback parameter.
+
+        Returns:
+            0, as required by the MLX loop-hook callback contract.
+        """
+        try:
+            self._game_loop(param)
+        except Exception as error:
+            print(f"Error during game loop: {error}")
+
+        return 0
+
+    def _game_loop(self, param: object) -> None:
+        """Advance timing, update the active screen and render it.
+
+        Args:
+            param: Unused MLX callback parameter.
+        """
         now = time.time()
         delta_time = now - self._state.last_frame_time
 
@@ -75,15 +111,49 @@ class MainGameLoop:
                 background, dim_background = self._get_settings_background()
                 self._settings_screen.render(background, dim_background)
 
-        return 0
-
     def _get_settings_background(self) -> tuple[NDArray[np.uint8], bool]:
+        """Return the frame to show behind the settings panel.
+
+        Returns:
+            A (background_image, dim_background) pair: the frame from
+            whichever screen opened the settings panel, and whether it
+            still needs to be dimmed (the pause screen already dims its
+            own background, so it is not dimmed again here).
+        """
         if self._settings_return_screen == Screen.GAME_PLAYING:
             # Already dimmed by PauseScreen - avoid dimming it twice.
             return self._game_screen.get_image(), False
         return self._main_menu_screen.get_image(), True
 
-    def on_key(self, keycode: int, param) -> int:
+    def on_key(self, keycode: int, param: object) -> int:
+        """MLX key-press callback: route the key to the active screen.
+
+        Any exception raised while handling the key is caught and logged
+        so a single bad key press cannot crash the whole game.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+            param: Unused MLX callback parameter.
+
+        Returns:
+            0, as required by the MLX key-hook callback contract.
+        """
+        try:
+            return self._on_key(keycode, param)
+        except Exception as error:
+            print(f"Error while handling key press: {error}")
+            return 0
+
+    def _on_key(self, keycode: int, param: object) -> int:
+        """Route one key press to whichever screen is currently active.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+            param: Unused MLX callback parameter.
+
+        Returns:
+            0, as required by the MLX key-hook callback contract.
+        """
         if self._state.screen == Screen.SETTINGS:
             action = self._settings_screen.handle_key(keycode)
             if action == "close":
@@ -132,10 +202,21 @@ class MainGameLoop:
         return 0
 
     def _open_settings(self, return_screen: Screen) -> None:
+        """Switch to the settings screen, remembering where to return to.
+
+        Args:
+            return_screen: Screen to switch back to when settings closes.
+        """
         self._settings_return_screen = return_screen
         self._state.screen = Screen.SETTINGS
 
     def _activate_main_menu_action(self, action: str) -> None:
+        """Apply an action string chosen from the main menu.
+
+        Args:
+            action: One of "start", "exit", "instructions", "settings" or
+                "highscores".
+        """
         if action == "start":
             self._restart_game()
         elif action == "exit":
@@ -149,6 +230,11 @@ class MainGameLoop:
             self._state.screen = Screen.HIGHSCORES
 
     def _init_mlx(self) -> MlxContext:
+        """Open the MLX display and game window and register callbacks.
+
+        Returns:
+            The MlxContext used by every screen for rendering.
+        """
         m = Mlx()
 
         mlx_ptr = m.mlx_init()
@@ -173,6 +259,7 @@ class MainGameLoop:
         return mlx_ctx
 
     def _reset_game(self) -> None:
+        """Rebuild the game screen, discarding all in-progress state."""
         self._game_screen = PlayGame(
             self._mlx_ctx,
             self._config,
@@ -180,6 +267,7 @@ class MainGameLoop:
         )
 
     def _restart_game(self) -> None:
+        """Start a brand new game run from the first level."""
         self._reset_game()
         self._state.state = GameState.PLAYING
         self._state.screen = Screen.GAME_PLAYING

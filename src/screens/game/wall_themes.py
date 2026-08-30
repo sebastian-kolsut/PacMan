@@ -4,6 +4,14 @@ BGRA = Tuple[int, int, int, int]
 
 
 class WallTheme(NamedTuple):
+    """A selectable color scheme for the maze walls.
+
+    Attributes:
+        name: Display name shown in the settings screen.
+        base_color: BGRA color used for the solid wall tiles.
+        pattern_color: BGRA color used for the decorative 42-pattern cells.
+    """
+
     name: str
     base_color: BGRA
     pattern_color: BGRA

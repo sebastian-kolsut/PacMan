@@ -17,8 +17,14 @@ KEY_D = 100
 
 
 class InstructionsScreen:
+    """Displays the controls/guide pages, reachable from the main menu."""
 
     def __init__(self, mlx_ctx: MlxContext) -> None:
+        """Load and size the instruction pages for the current window.
+
+        Args:
+            mlx_ctx: Window/rendering context to size the pages to.
+        """
         self._mlx_ctx = mlx_ctx
         self._fb = FrameBuffer(
             mlx_ctx,
@@ -41,6 +47,14 @@ class InstructionsScreen:
         ]
 
     def handle_key(self, keycode: int) -> str | None:
+        """Handle one key press: page navigation or returning to the menu.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            "main_menu" if Escape was pressed, otherwise None.
+        """
         if keycode == KEY_ESCAPE:
             return "main_menu"
         if keycode in (KEY_LEFT, KEY_A):
@@ -52,9 +66,16 @@ class InstructionsScreen:
         return None
 
     def reset(self) -> None:
+        """Return to the first instructions page."""
         self._page_index = 0
 
     def _calculate_page_size(self) -> tuple[int, int]:
+        """Compute the page image size that fits the current window.
+
+        Returns:
+            A (width, height) pair, capped to the window's max scale and
+            matched to the source images' aspect ratio.
+        """
         max_width = int(self._mlx_ctx.win_width * _IMAGE_MAX_WIDTH_SCALE)
         max_height = int(self._mlx_ctx.win_height * _IMAGE_MAX_HEIGHT_SCALE)
         width = min(
@@ -66,9 +87,11 @@ class InstructionsScreen:
         return max(1, width), max(1, height)
 
     def _get_page_aspect_ratio(self) -> float:
+        """Return the fixed width/height aspect ratio of the page images."""
         return 1536 / 1024
 
     def render(self) -> None:
+        """Draw the current instructions page, centered in the window."""
         pixels = self._fb.get_array()
         pixels[:, :, :] = np.array([0, 0, 0, 255], dtype=np.uint8)
         page = self._pages[self._page_index]

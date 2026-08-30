@@ -17,7 +17,15 @@ _SCREEN_TRACKS = {
 
 
 class MusicPlayer:
+    """Plays background music matching the current screen and volume."""
+
     def __init__(self, program_state: ProgramState) -> None:
+        """Initialize the mixer, disabling music if no audio device exists.
+
+        Args:
+            program_state: Shared program state, read each frame to pick
+                the track and volume to play.
+        """
         self._program_state = program_state
         self._current_track: str | None = None
         self._last_volume: int | None = None
@@ -30,6 +38,7 @@ class MusicPlayer:
             self._audio_available = False
 
     def update(self) -> None:
+        """Sync the volume and switch tracks if the current screen changed."""
         if not self._audio_available:
             return
 
@@ -42,6 +51,12 @@ class MusicPlayer:
             pygame.mixer.music.play(loops=-1)
 
     def _get_desired_track(self) -> str | None:
+        """Return the music track that should be playing right now.
+
+        Returns:
+            The path to the track for the current screen, or None while
+            in the settings screen (where music keeps playing unchanged).
+        """
         screen = self._program_state.screen
 
         if screen == Screen.GAME_PLAYING:
@@ -52,6 +67,7 @@ class MusicPlayer:
         return _SCREEN_TRACKS.get(screen, _MENU_TRACK)
 
     def _sync_volume(self) -> None:
+        """Apply the configured music volume if it has changed."""
         if self._program_state.music_volume == self._last_volume:
             return
 

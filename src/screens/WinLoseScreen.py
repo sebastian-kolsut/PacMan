@@ -57,7 +57,17 @@ _MAX_NAME_LEN = 10
 
 
 class WinLoseScreen:
+    """Shown after a game ends: outcome header, then either name entry
+    for an eligible highscore or the restart/main-menu/etc. buttons."""
+
     def __init__(self, mlx_ctx: MlxContext, state: ProgramState) -> None:
+        """Load the win/lose headers, labels and button assets.
+
+        Args:
+            mlx_ctx: Window/rendering context to size the screen to.
+            state: Shared program state, read for whether the run was
+                won or lost.
+        """
         self._mlx_ctx = mlx_ctx
         self._state = state
         self._input_name = False
@@ -143,6 +153,16 @@ class WinLoseScreen:
         }
 
     def handle_key(self, keycode: int) -> str | None:
+        """Handle one key press: name entry, or menu navigation/selection.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            The selected action string ("restart", "main_menu",
+            "highscores" or "settings") if Enter/Space was pressed
+            outside of name entry, otherwise None.
+        """
         if self._input_name:
             if keycode == KEY_ENTER and self._name:
                 self._input_name = False
@@ -180,6 +200,14 @@ class WinLoseScreen:
 
     def update(self, is_eligible: bool, scores: Highscores,
                score: int) -> None:
+        """Update the current run's score and start name entry if eligible.
+
+        Args:
+            is_eligible: Whether score qualifies for the top-10
+                leaderboard.
+            scores: Highscores leaderboard to add the score to.
+            score: The player's final score for this run.
+        """
         self._scores = scores
         self._score = score
         if is_eligible and not self._checked:
@@ -187,6 +215,12 @@ class WinLoseScreen:
             return
 
     def render(self, game_image: NDArray[np.uint8]) -> None:
+        """Draw the dimmed game frame, outcome header and name/buttons.
+
+        Args:
+            game_image: Final gameplay frame to dim and draw behind the
+                win/lose overlay.
+        """
         pixels = self._fb.get_array()
         pixels[:, :, :] = game_image
         FrameBuffer.draw_blended_tile(pixels, self._overlay, 0, 0)
@@ -208,6 +242,14 @@ class WinLoseScreen:
         self._fb.put_image_to_window()
 
     def _load_header(self, path: str) -> NDArray[np.uint8]:
+        """Load and recolor a win/lose header image to be transparent.
+
+        Args:
+            path: Path to the header image asset.
+
+        Returns:
+            The header image with its black background made transparent.
+        """
         image = FrameBuffer.get_image_array(
             path,
             self._header_width,
@@ -226,6 +268,14 @@ class WinLoseScreen:
         value: str,
         y: int,
     ) -> None:
+        """Draw one labeled row (e.g. "Enter your name: ___") onto img.
+
+        Args:
+            img: Destination pixel buffer to draw onto.
+            label_img: Pre-rendered label image for this row.
+            value: Text value to render next to the label.
+            y: Y coordinate of the row.
+        """
         value_img = self._info_render_txt.put_text_to_image(value)
 
         label_x = int(self._mlx_ctx.win_width * 0.26)
@@ -249,6 +299,11 @@ class WinLoseScreen:
         )
 
     def _draw_player_info(self, img: NDArray[np.uint8]) -> None:
+        """Draw the name-entry and score rows shown while entering a name.
+
+        Args:
+            img: Destination pixel buffer to draw onto.
+        """
         start_y = int(self._mlx_ctx.win_height * 0.48)
         name_value = self._name if self._name else "_"
 
@@ -269,6 +324,12 @@ class WinLoseScreen:
         )
 
     def _draw_typing_field(self, img: NDArray[np.uint8]) -> None:
+        """Draw a plain "ENTER NAME: <name>" line, unused by the current
+        label-based layout but kept for simple debugging renders.
+
+        Args:
+            img: Destination pixel buffer to draw onto.
+        """
         txt = "ENTER NAME: "
 
         center_x = self._mlx_ctx.win_width // 2
@@ -284,6 +345,17 @@ class WinLoseScreen:
         width: int | None = None,
         height: int | None = None,
     ) -> NDArray[np.uint8]:
+        """Load a button sprite, defaulting to the standard button size.
+
+        Args:
+            path: Path to the button image asset.
+            width: Target width, or None to use the standard button width.
+            height: Target height, or None to use the standard button
+                height.
+
+        Returns:
+            The loaded button sprite.
+        """
         return FrameBuffer.get_image_array(
             path,
             width or self._button_width,
@@ -295,6 +367,13 @@ class WinLoseScreen:
         pixels: NDArray[np.uint8],
         header_height: int,
     ) -> None:
+        """Draw the column of action buttons below the outcome header.
+
+        Args:
+            pixels: Destination pixel buffer to draw onto.
+            header_height: Height of the outcome header, to place the
+                first button below it.
+        """
         first_button_y = self._header_y + header_height + _BUTTON_GAP
 
         for index, action in enumerate(self._get_actions()):
@@ -310,12 +389,27 @@ class WinLoseScreen:
             )
 
     def _get_actions(self) -> list[str]:
+        """Return the button actions available for the current outcome.
+
+        Returns:
+            The action list for GameState.WON or GameState.LOST,
+            defaulting to the lost-state actions.
+        """
         return self._actions_by_state.get(
             self._state.state,
             self._actions_by_state[GameState.LOST],
         )
 
     def _get_button_image(self, action: str, index: int) -> NDArray[np.uint8]:
+        """Return the sprite to use for one button, pulsing it if selected.
+
+        Args:
+            action: Action name identifying which button sprite to use.
+            index: Position of this button in the menu.
+
+        Returns:
+            The (possibly enlarged, pulsing) button image to draw.
+        """
         if index != self._selected_index:
             return self._buttons[action]
 
@@ -325,4 +419,12 @@ class WinLoseScreen:
         return self._buttons[action]
 
     def _get_centered_x(self, width: int) -> int:
+        """Return the x coordinate that horizontally centers a given width.
+
+        Args:
+            width: Width in pixels of the element to center.
+
+        Returns:
+            The x coordinate to draw the element at.
+        """
         return (self._mlx_ctx.win_width - width) // 2

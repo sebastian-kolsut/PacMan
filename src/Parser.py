@@ -4,21 +4,23 @@ from typing import TextIO
 
 
 class Parser:
+    """Loads a JSON-with-comments config file into a validated Config."""
 
     def parse(self, config_file: str) -> Config:
-        """Parse and validate a config file into a ConfigModel.
+        """Parse and validate a config file into a Config instance.
 
         Args:
-            config_file (str): Path to the JSON config file.
-
-        Raises:
-            InvalidFileSufixError: If the file sufix is diffrent from json.
-            ValidationError: If the config data fails pydantic validation
-                (propagated from ConfigModel construction).
-            FileNotFoundError: If the file at `path` does not exist.
+            config_file: Path to the JSON config file. May contain "#" or
+                "//" comments, which are stripped before parsing.
 
         Returns:
-            ConfigModel: A validated ConfigModel instance.
+            A validated Config instance.
+
+        Raises:
+            InvalidFileSufixError: If config_file does not end in ".json".
+            ValidationError: If the config content fails pydantic
+                validation (propagated from Config construction).
+            FileNotFoundError: If config_file does not exist.
         """
         if not config_file.endswith(".json"):
             raise InvalidFileSufixError(
@@ -31,6 +33,14 @@ class Parser:
 
     @staticmethod
     def _strip_comments(file: TextIO) -> str:
+        """Strip "#" and "//" comments from a config file's contents.
+
+        Args:
+            file: Open text file to read and strip comments from.
+
+        Returns:
+            The file's contents with every comment removed.
+        """
         json_string = ""
 
         for line in file.readlines():

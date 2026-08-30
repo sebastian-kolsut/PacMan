@@ -1,11 +1,12 @@
 from types import SimpleNamespace
+from typing import Callable, cast
 
 import numpy as np
 import pytest
 
 from src.models import Direction
 from src.screens.game.Pathfinder import Pathfinder
-from src.screens.game.ghosts import Blinky, Pinky
+from src.screens.game.ghosts import Blinky, Ghost, Pinky
 
 
 class _OpenMaze:
@@ -69,7 +70,8 @@ def replace_framebuffer(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def _make_ghost(ghost_class, start_cell: tuple[int, int] = (3, 3)):
+def _make_ghost(ghost_class: Callable[..., Ghost],
+                start_cell: tuple[int, int] = (3, 3)) -> Ghost:
     return ghost_class(
         cell_size=10,
         mlx_ctx=SimpleNamespace(),
@@ -89,8 +91,9 @@ def test_blinky_chooses_shortest_direction_toward_pacman() -> None:
 def test_blinky_chooses_a_detour_when_direct_path_is_blocked() -> None:
     blinky = Blinky(
         cell_size=10,
-        mlx_ctx=SimpleNamespace(),
-        maze=_MazeWithBlockedExit((3, 3), Direction.RIGHT),
+        mlx_ctx=SimpleNamespace(),  # type: ignore[arg-type]
+        maze=_MazeWithBlockedExit(  # type: ignore[arg-type]
+            (3, 3), Direction.RIGHT),
         start_cell=(3, 3),
     )
 
@@ -101,7 +104,8 @@ def test_blinky_chooses_a_detour_when_direct_path_is_blocked() -> None:
 
 def test_pathfinder_returns_a_detour_around_a_blocked_exit() -> None:
     pathfinder = Pathfinder(
-        _MazeWithBlockedExit((3, 3), Direction.RIGHT),
+        _MazeWithBlockedExit(  # type: ignore[arg-type]
+            (3, 3), Direction.RIGHT),
     )
 
     path = pathfinder.find_path((3, 3), (5, 3))
@@ -112,7 +116,7 @@ def test_pathfinder_returns_a_detour_around_a_blocked_exit() -> None:
 
 
 def test_pinky_targets_three_cells_ahead_of_pacman() -> None:
-    pinky = _make_ghost(Pinky)
+    pinky = cast(Pinky, _make_ghost(Pinky))
 
     target_cell = pinky._get_ambush_target((2, 3), Direction.RIGHT)
 
