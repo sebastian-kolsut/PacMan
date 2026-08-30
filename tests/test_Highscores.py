@@ -6,6 +6,7 @@ from src.Highscores import (
     Highscores,
     HighscoreData,
     NameToLongError,
+    NegativeScoreError,
     NotAlphanumericError,
 )
 
@@ -55,7 +56,8 @@ def test_highest_score_is_first_when_added_score_is_highest() -> None:
 
     highscores.add_score("HHH", 1000)
 
-    assert highscores._highscores.root[0] == HighscoreData(name="HHH", score=1000)
+    assert highscores._highscores.root[0] == \
+        HighscoreData(name="HHH", score=1000)
 
 
 def test_highest_score_is_first_when_added_score_is_lowest() -> None:
@@ -73,7 +75,8 @@ def test_highest_score_stays_first_at_top_of_file() -> None:
     highscores.add_score("KKK", 500)
     highscores.add_score("LLL", 50)
 
-    assert highscores._highscores.root[0] == HighscoreData(name="KKK", score=500)
+    assert highscores._highscores.root[0] == \
+        HighscoreData(name="KKK", score=500)
 
 
 def test_add_score_truncates_to_ten_entries() -> None:
@@ -135,7 +138,8 @@ def test_add_score_accepts_alphanumeric_name() -> None:
 
     highscores.add_score("ABC123", 10)
 
-    assert HighscoreData(name="ABC123", score=10) in highscores._highscores.root
+    assert HighscoreData(name="ABC123", score=10) in \
+        highscores._highscores.root
 
 
 def test_add_score_accepts_name_with_spaces() -> None:
@@ -163,7 +167,8 @@ def test_add_score_raises_name_too_long_error() -> None:
         highscores.add_score(name, 10)
 
 
-def test_add_score_raises_not_alphanumeric_error_for_special_characters() -> None:
+def test_add_score_raises_not_alphanumeric_error_for_special_characters() \
+        -> None:
     highscores = Highscores(_TEST_FILE)
 
     with pytest.raises(NotAlphanumericError):
@@ -183,5 +188,22 @@ def test_add_score_rejected_name_does_not_change_length() -> None:
 
     with pytest.raises(NameToLongError):
         highscores.add_score("A" * 11, 10)
+
+    assert len(highscores._highscores.root) == initial_length
+
+
+def test_add_score_raises_negative_score_error() -> None:
+    highscores = Highscores(_TEST_FILE)
+
+    with pytest.raises(NegativeScoreError):
+        highscores.add_score("MMM", -1)
+
+
+def test_add_score_rejected_negative_score_does_not_change_length() -> None:
+    highscores = Highscores(_TEST_FILE)
+    initial_length = len(highscores._highscores.root)
+
+    with pytest.raises(NegativeScoreError):
+        highscores.add_score("MMM", -1)
 
     assert len(highscores._highscores.root) == initial_length

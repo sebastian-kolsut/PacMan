@@ -30,7 +30,16 @@ CHEAT_FONT_SIZE = 0.022
 
 
 class HUD:
+    """In-game heads-up display: score, lives, level and remaining time."""
+
     def __init__(self, config: Config, mlx_ctx: MlxContext):
+        """Load the HUD labels and size them for the current window.
+
+        Args:
+            config: Game configuration, used for the starting lives count
+                and the first level's time limit.
+            mlx_ctx: Window/rendering context used to size the HUD.
+        """
         self._mlx_ctx = mlx_ctx
         self._timer = Timer(config.levels[0].level_max_time, mlx_ctx)
         self._lives = Lives(config.lives, mlx_ctx)
@@ -75,16 +84,33 @@ class HUD:
         self._maze_right = mlx_ctx.win_width
 
     def set_maze_bounds(self, maze_left: int, maze_width: int) -> None:
+        """Record the maze's horizontal position so the HUD flanks it.
+
+        Args:
+            maze_left: X coordinate of the maze's left edge.
+            maze_width: Width of the maze in pixels.
+        """
         self._maze_left = maze_left
         self._maze_right = maze_left + maze_width
 
     def reset_timer(self, time_for_level: float) -> None:
+        """Restart the level timer.
+
+        Args:
+            time_for_level: Seconds available to finish the new level.
+        """
         self._timer.reset(time_for_level)
 
     def get_score(self) -> int:
+        """Return the player's current score."""
         return self._score.get_score()
 
     def set_level(self, level: int) -> None:
+        """Update the displayed level number, re-rendering it if changed.
+
+        Args:
+            level: 1-based level number to display.
+        """
         if self._level == level:
             return
 
@@ -92,9 +118,21 @@ class HUD:
         self._level_img = self._render_txt.put_text_to_image(str(self._level))
 
     def show_cheat_codes(self) -> None:
+        """Start showing the cheat-code legend overlay."""
         self._show_cheat_codes = True
 
     def update(self, delta_time: float, points: int, lives: int) -> bool:
+        """Advance the HUD state for one frame.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+            points: Points earned this frame (may be zero).
+            lives: Current number of lives.
+
+        Returns:
+            True while the level's time limit has not been reached, False
+            once time has run out.
+        """
         self._current_lives = lives
         self._score.update(points)
         self._lives.update(lives)
@@ -105,6 +143,11 @@ class HUD:
         return True
 
     def render(self, main_screen_img: NDArray[np.uint8]) -> None:
+        """Draw the time, score, lives, level and cheat legend.
+
+        Args:
+            main_screen_img: Destination pixel buffer to draw onto.
+        """
         left_label_x = (self._maze_left - self._label_width) // 2
         time_label_y = self._margin
         FrameBuffer.draw_blended_tile(
@@ -127,7 +170,8 @@ class HUD:
         )
         score_y = score_label_y + self._label_height + self._gap
         score_image = self._score.get_image()
-        score_x = left_label_x + (self._label_width - score_image.shape[1]) // 2
+        score_x = left_label_x + \
+            (self._label_width - score_image.shape[1]) // 2
         self._score.render(main_screen_img, score_x, score_y)
 
         fps_y = score_y + score_image.shape[0] + self._gap
@@ -155,7 +199,8 @@ class HUD:
 
         if self._current_lives > self._lives.get_max_lives():
             lives_count_text = f"*{self._current_lives}"
-            lives_count_img = self._render_txt.put_text_to_image(lives_count_text)
+            lives_count_img = self._render_txt.put_text_to_image(
+                lives_count_text)
 
             lives_count_x = lives_x + self._lives.get_width() + self._gap
             lives_count_y = lives_y + (
@@ -195,7 +240,8 @@ class HUD:
             cheat_y = level_y + self._level_img.shape[0] + self._gap
 
             for cheat_text in _CHEAT_TEXTS:
-                cheat_img = self._cheat_render_txt.put_text_to_image(cheat_text)
+                cheat_img = self._cheat_render_txt.put_text_to_image(
+                    cheat_text)
 
                 cheat_x = lives_label_x + (
                     self._label_width - cheat_img.shape[1]

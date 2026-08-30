@@ -14,8 +14,14 @@ _DIRECTIONS = (
 
 
 class Pathfinder:
+    """Breadth-first search helper for navigating the maze grid."""
 
     def __init__(self, maze: Maze) -> None:
+        """Initialize the pathfinder for the given maze.
+
+        Args:
+            maze: Maze whose wall bitboards define which cells connect.
+        """
         self._maze = maze
 
     def find_path(
@@ -23,6 +29,16 @@ class Pathfinder:
         start_cell: Tuple[int, int],
         target_cell: Tuple[int, int],
     ) -> List[Tuple[int, int]]:
+        """Find the shortest path between two cells via breadth-first search.
+
+        Args:
+            start_cell: (x, y) cell to start from.
+            target_cell: (x, y) cell to reach.
+
+        Returns:
+            The list of cells from start to target inclusive, or an empty
+            list if target_cell is unreachable from start_cell.
+        """
         queue = deque([start_cell])
         came_from: Dict[Tuple[int, int], Tuple[int, int] | None] = {
             start_cell: None,
@@ -57,6 +73,16 @@ class Pathfinder:
         start_cell: Tuple[int, int],
         target_cell: Tuple[int, int],
     ) -> Direction | None:
+        """Return the first step direction of the shortest path to a cell.
+
+        Args:
+            start_cell: (x, y) cell to start from.
+            target_cell: (x, y) cell to reach.
+
+        Returns:
+            The direction to move from start_cell, or None if no path
+            exists (target unreachable, or start equals target).
+        """
         path = self.find_path(start_cell, target_cell)
 
         if len(path) < 2:
@@ -68,12 +94,28 @@ class Pathfinder:
         self,
         cell: Tuple[int, int],
     ) -> List[Tuple[int, int]]:
+        """Return the cells directly reachable from cell (no walls between).
+
+        Args:
+            cell: (x, y) cell to look around.
+
+        Returns:
+            The list of adjacent cells with no wall blocking the way.
+        """
         return [
             self.get_next_cell(cell, direction)
             for direction in self.get_valid_directions(cell)
         ]
 
     def get_valid_directions(self, cell: Tuple[int, int]) -> List[Direction]:
+        """Return the directions in which cell has no blocking wall.
+
+        Args:
+            cell: (x, y) cell to check.
+
+        Returns:
+            The list of directions that are not blocked by a wall.
+        """
         cell_x, cell_y = cell
         return [
             direction
@@ -85,6 +127,15 @@ class Pathfinder:
         self,
         start_cell: Tuple[int, int],
     ) -> List[Tuple[int, int]]:
+        """Return every cell reachable from start_cell via open corridors.
+
+        Args:
+            start_cell: (x, y) cell to start the search from.
+
+        Returns:
+            The list of cells reachable from start_cell, start_cell
+            included.
+        """
         queue = deque([start_cell])
         visited = {start_cell}
 
@@ -103,6 +154,17 @@ class Pathfinder:
         cell: Tuple[int, int],
         direction: Direction,
     ) -> Tuple[int, int]:
+        """Return the cell one step away from cell in the given direction.
+
+        Args:
+            cell: (x, y) starting cell.
+            direction: Direction to step in.
+
+        Returns:
+            The (x, y) cell one step from cell in direction. Returns cell
+            unchanged if direction is not one of the four cardinal
+            directions.
+        """
         cell_x, cell_y = cell
 
         if direction == Direction.UP:
@@ -121,6 +183,18 @@ class Pathfinder:
         current_cell: Tuple[int, int],
         next_cell: Tuple[int, int],
     ) -> Direction:
+        """Return the direction that moves from current_cell to next_cell.
+
+        Args:
+            current_cell: (x, y) starting cell.
+            next_cell: (x, y) cell adjacent to current_cell.
+
+        Returns:
+            The direction of travel from current_cell to next_cell.
+
+        Raises:
+            ValueError: If the two cells are not adjacent.
+        """
         current_x, current_y = current_cell
         next_x, next_y = next_cell
 
@@ -141,6 +215,17 @@ class Pathfinder:
         cell_y: int,
         direction: Direction,
     ) -> bool:
+        """Return whether cell_x, cell_y has an open path in direction.
+
+        Args:
+            cell_x: X coordinate of the cell to check.
+            cell_y: Y coordinate of the cell to check.
+            direction: Direction to check for an open path.
+
+        Returns:
+            True if the neighbor cell exists within the maze bounds and no
+            wall blocks the move, False otherwise.
+        """
         next_x, next_y = self.get_next_cell((cell_x, cell_y), direction)
 
         if (

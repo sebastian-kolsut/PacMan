@@ -1,3 +1,5 @@
+"""Gameplay entities: maze, Pac-Man, ghosts, pacgums and in-game overlays."""
+
 from .PacMan import PacMan
 from .Maze import Maze
 from .RenderMaze import RenderMaze

@@ -29,8 +29,18 @@ _LEFT_FOLDER = "assets/pac_man/pacman-left"
 
 
 class PacMan(Character):
+    """The player-controlled character: movement, animation and score."""
+
     def __init__(self, cell_size: int, mlx_ctx: MlxContext,
                  maze: Maze, pacgums: Pacgums) -> None:
+        """Spawn Pac-Man in the middle of the maze and load his animations.
+
+        Args:
+            cell_size: Size in pixels of one maze cell.
+            mlx_ctx: Window/rendering context used for the sprite buffer.
+            maze: Maze Pac-Man moves through.
+            pacgums: Pacgum layout, eaten as Pac-Man moves over cells.
+        """
         super().__init__(cell_size, mlx_ctx, maze)
         self._pacgums = pacgums
         self._animation = 0
@@ -56,13 +66,25 @@ class PacMan(Character):
                                               _LEFT_FOLDER)
         }
 
-    def update(self, delta_time: float, keycode: int):
+    def update(self, delta_time: float, keycode: int) -> None:
+        """Move Pac-Man for one frame and advance his chomp animation.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+            keycode: X11 keysym of the currently pressed movement key, or
+                0 if none is pressed.
+        """
         self._move_pac_man(keycode, delta_time)
         self._animation += 1
         if self._animation == 15:
             self._animation = 0
 
     def render(self) -> NDArray[np.uint8]:
+        """Render and return Pac-Man's current animation frame.
+
+        Returns:
+            The RGBA sprite image for the current direction and frame.
+        """
         pixels = self._fb.get_array()
         pixels[:, :] = [0, 0, 0, 0]
         self._fb.draw_blended_tile(
@@ -72,23 +94,47 @@ class PacMan(Character):
         return pixels
 
     def get_new_points(self) -> int:
+        """Return and clear the points earned since the last call.
+
+        Returns:
+            Points earned since the previous call to get_new_points.
+        """
         points = self._points
         self._points = 0
         return points
 
     def add_points(self, points: int) -> None:
+        """Add points to Pac-Man's pending score.
+
+        Args:
+            points: Points to add (e.g. for eating a frightened ghost).
+        """
         self._points += points
 
     def set_speed_multiplier(self, speed_multiplier: float) -> None:
+        """Set Pac-Man's movement speed as a multiple of the cell size.
+
+        Args:
+            speed_multiplier: New speed, in cells per second.
+        """
         self._speed = self._cell_size * speed_multiplier
 
     def get_cell_position(self) -> tuple[int, int]:
+        """Return the maze cell Pac-Man currently occupies."""
         return self._get_current_cell()
 
     def get_direction(self) -> Direction:
+        """Return Pac-Man's current facing/movement direction."""
         return self._direction
 
-    def _move_pac_man(self, keycode: int, delta_time: float):
+    def _move_pac_man(self, keycode: int, delta_time: float) -> None:
+        """Apply input, move Pac-Man and eat any pacgum on his new cell.
+
+        Args:
+            keycode: X11 keysym of the currently pressed movement key, or
+                0 if none is pressed.
+            delta_time: Seconds elapsed since the last update.
+        """
         if keycode in _DIRETCIONS:
             self._pending_direction = _DIRETCIONS[keycode]
         self._try_turn(delta_time)
@@ -109,6 +155,12 @@ class PacMan(Character):
         self._pos_x, self._pos_y = next_pac_x, next_pac_y
 
     def ate_super_pacgum(self) -> bool:
+        """Return and clear whether a super pacgum was eaten this frame.
+
+        Returns:
+            True if a super pacgum was eaten since the last call, False
+            otherwise.
+        """
         ate_super = self._ate_super_pacgum
         self._ate_super_pacgum = False
         return ate_super

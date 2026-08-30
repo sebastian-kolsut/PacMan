@@ -13,13 +13,30 @@ _WHITE = (255, 255, 255)
 
 
 class RenderText:
+    """Rasterizes ASCII text to pixel images using a bitmap-style font."""
+
     def __init__(self, font_file: str, mlx_ctx: MlxContext,
                  font_scale: float) -> None:
+        """Pre-render every printable ASCII character at a fixed size.
+
+        Args:
+            font_file: Path to the TrueType/OpenType font file to use.
+            mlx_ctx: Window/rendering context used to scale the font size.
+            font_scale: Font size as a fraction of the window height.
+        """
         self._font_size = int(mlx_ctx.win_height * font_scale)
         self._font_images, self._char_widths = \
             self._load_font_images(font_file)
 
     def put_text_to_image(self, text: str) -> NDArray[np.uint8]:
+        """Render text into a single tightly-cropped image.
+
+        Args:
+            text: String to render, using only pre-loaded ASCII characters.
+
+        Returns:
+            An RGBA image just wide enough to fit the rendered text.
+        """
         image = np.zeros(
             (self._font_height, self.get_text_width(text), 4),
             dtype=np.uint8)
@@ -33,6 +50,14 @@ class RenderText:
         return image
 
     def get_text_width(self, text: str) -> int:
+        """Return the pixel width text would take up when rendered.
+
+        Args:
+            text: String to measure.
+
+        Returns:
+            The total width in pixels of the rendered text.
+        """
         len = 0
 
         for char in text:
@@ -41,11 +66,21 @@ class RenderText:
         return len
 
     def get_text_height(self) -> int:
+        """Return the fixed pixel height of one line of rendered text."""
         return self._font_height
 
     def _load_font_images(
             self, font_file: str
     ) -> Tuple[Dict[str, NDArray[np.uint8]], Dict[str, int]]:
+        """Rasterize every printable ASCII character from font_file.
+
+        Args:
+            font_file: Path to the TrueType/OpenType font file to use.
+
+        Returns:
+            A (images, widths) pair mapping each character to its glyph
+            image and pixel width.
+        """
         self.font = ImageFont.truetype(font_file, self._font_size)
         ascii: Dict[str, NDArray[np.uint8]] = {}
         widths: Dict[str, int] = {}

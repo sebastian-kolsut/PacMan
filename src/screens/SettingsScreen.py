@@ -41,9 +41,18 @@ _SEGMENT_EMPTY_COLOR = (90, 90, 90, 255)
 
 
 class SettingsScreen:
+    """Wall color and music volume options, reachable from the menu or
+    the in-game pause screen."""
 
     def __init__(self, mlx_ctx: MlxContext,
                  program_state: ProgramState) -> None:
+        """Load the settings panel and size it to the current window.
+
+        Args:
+            mlx_ctx: Window/rendering context to size the panel to.
+            program_state: Shared program state, read and written for
+                the active wall theme and music volume.
+        """
         self._mlx_ctx = mlx_ctx
         self._program_state = program_state
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
@@ -85,6 +94,14 @@ class SettingsScreen:
         self._hint_img = hint_render_txt.put_text_to_image(_HINT_TEXT)
 
     def handle_key(self, keycode: int) -> str | None:
+        """Handle one key press: row selection or adjusting an option.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            "close" if Escape was pressed, otherwise None.
+        """
         if keycode == KEY_ESCAPE:
             return "close"
         if keycode == KEY_UP:
@@ -106,12 +123,22 @@ class SettingsScreen:
         return None
 
     def _adjust_selected_option(self, step: int) -> None:
+        """Apply a left/right adjustment to whichever row is selected.
+
+        Args:
+            step: -1 or 1, the direction to adjust the selected option in.
+        """
         if self._selected_option == _OPTION_WALL_COLOR:
             self._cycle_wall_theme(step)
         else:
             self._adjust_volume(step)
 
     def _adjust_volume(self, step: int) -> None:
+        """Change the music volume by step, clamped to a valid range.
+
+        Args:
+            step: -1 or 1, the direction to adjust the volume in.
+        """
         self._program_state.music_volume = max(
             0, min(_VOLUME_STEPS, self._program_state.music_volume + step),
         )
@@ -121,6 +148,15 @@ class SettingsScreen:
         background_image: NDArray[np.uint8],
         dim_background: bool = True,
     ) -> None:
+        """Draw the settings panel over background_image.
+
+        Args:
+            background_image: Frame to draw the panel on top of (the
+                main menu or the paused game screen).
+            dim_background: Whether to darken background_image first;
+                False when the caller (e.g. the pause screen) has
+                already dimmed it.
+        """
         self._sync_color_label()
 
         pixels = self._fb.get_array()
@@ -145,11 +181,17 @@ class SettingsScreen:
         self._fb.put_image_to_window()
 
     def _cycle_wall_theme(self, step: int) -> None:
+        """Move to the next/previous wall color theme.
+
+        Args:
+            step: -1 or 1, the direction to cycle the theme in.
+        """
         self._program_state.wall_theme_index = (
             self._program_state.wall_theme_index + step
         ) % len(WALL_THEMES)
 
     def _sync_color_label(self) -> None:
+        """Redraw the wall color label/swatch if the active theme changed."""
         if self._program_state.wall_theme_index == self._shown_theme_index:
             return
 
@@ -163,23 +205,31 @@ class SettingsScreen:
         )
 
     def _color_row_content_height(self) -> int:
-        return max(
+        """Return the pixel height of the tallest element in the color row."""
+        return int(max(
             self._arrow_left_img.shape[0],
             self._color_label_img.shape[0],
             self._swatch_img.shape[0],
             self._arrow_right_img.shape[0],
-        )
+        ))
 
     def _volume_row_content_height(self) -> int:
-        return max(
+        """Return the pixel height of the tallest element in the volume row."""
+        return int(max(
             self._arrow_left_img.shape[0],
             self._volume_label_img.shape[0],
             _SEGMENT_HEIGHT,
             self._arrow_right_img.shape[0],
-        )
+        ))
 
     def _draw_color_picker(self, pixels: NDArray[np.uint8],
                            row_y: int) -> None:
+        """Draw the wall color row: label, swatch, and arrows if selected.
+
+        Args:
+            pixels: Destination pixel buffer to draw onto.
+            row_y: Y coordinate of the row.
+        """
         show_arrows = self._selected_option == _OPTION_WALL_COLOR
         content_height = self._color_row_content_height()
         row_width = (
@@ -227,6 +277,12 @@ class SettingsScreen:
 
     def _draw_volume_bar(self, pixels: NDArray[np.uint8],
                          row_y: int) -> None:
+        """Draw the volume row: label, segmented bar, and arrows if selected.
+
+        Args:
+            pixels: Destination pixel buffer to draw onto.
+            row_y: Y coordinate of the row.
+        """
         show_arrows = self._selected_option == _OPTION_VOLUME
         content_height = self._volume_row_content_height()
         bar_width = _VOLUME_STEPS * _SEGMENT_WIDTH \
@@ -278,6 +334,11 @@ class SettingsScreen:
             )
 
     def _draw_close_hint(self, pixels: NDArray[np.uint8]) -> None:
+        """Draw the "ESC to close" hint near the bottom of the panel.
+
+        Args:
+            pixels: Destination pixel buffer to draw onto.
+        """
         hint_x = (self._mlx_ctx.win_width - self._hint_img.shape[1]) // 2
         hint_x = max(0, min(hint_x,
                             self._mlx_ctx.win_width - self._hint_img.shape[1]))
@@ -287,6 +348,12 @@ class SettingsScreen:
         FrameBuffer.draw_blended_tile(pixels, self._hint_img, hint_x, hint_y)
 
     def _calculate_panel_size(self) -> tuple[int, int]:
+        """Compute the settings panel size that fits the current window.
+
+        Returns:
+            A (width, height) pair, capped to the window's max scale and
+            matched to the panel image's aspect ratio.
+        """
         max_width = int(self._mlx_ctx.win_width * _PANEL_MAX_WIDTH_SCALE)
         max_height = int(self._mlx_ctx.win_height * _PANEL_MAX_HEIGHT_SCALE)
         width = min(max_width, int(max_height * _PANEL_ASPECT_RATIO))

@@ -1,3 +1,5 @@
+"""Top-level screens: gameplay, menu, instructions, highscores, etc."""
+
 from .PlayGame import PlayGame
 from .MainMenu import MainMenu
 from .InstructionsScreen import InstructionsScreen

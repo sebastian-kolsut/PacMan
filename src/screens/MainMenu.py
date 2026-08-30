@@ -44,6 +44,12 @@ class MainMenu:
     """Render and control the main menu screen."""
 
     def __init__(self, mlx_ctx: MlxContext, scores: Highscores) -> None:
+        """Load the menu assets and size them to the current window.
+
+        Args:
+            mlx_ctx: Window/rendering context to size the menu to.
+            scores: Highscores leaderboard, shown in the menu panel.
+        """
         self._mlx_ctx = mlx_ctx
         self._scores = scores
         self._fb = FrameBuffer(
@@ -161,9 +167,22 @@ class MainMenu:
         self._leaderboard_image = self._top_highscores.copy()
 
     def get_image(self) -> NDArray[np.uint8]:
+        """Return the last rendered menu frame.
+
+        Used as the dimmed background for the settings screen.
+        """
         return self._fb.get_array()
 
     def handle_key(self, keycode: int) -> str | None:
+        """Handle one key press: menu navigation or selecting an action.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            The selected action string if Enter/Space was pressed,
+            otherwise None.
+        """
         if keycode in (KEY_UP, KEY_W):
             self.move_selection_up()
             return None
@@ -175,6 +194,7 @@ class MainMenu:
         return None
 
     def render(self) -> None:
+        """Draw the title, leaderboard, mascots and menu buttons."""
         pixels = self._fb.get_array()
         pixels[:, :, :] = np.array([0, 0, 0, 255], dtype=np.uint8)
 
@@ -237,6 +257,15 @@ class MainMenu:
         action: str,
         index: int,
     ) -> NDArray[np.uint8]:
+        """Return the sprite to use for one button, pulsing it if selected.
+
+        Args:
+            action: Action name identifying which button sprite to use.
+            index: Position of this button in the menu.
+
+        Returns:
+            The (possibly enlarged, pulsing) button image to draw.
+        """
         if index != self._selected_index:
             return self._buttons[action]
 
@@ -251,6 +280,13 @@ class MainMenu:
         center_x: int,
         y: int,
     ) -> None:
+        """Draw image horizontally centered on center_x at height y.
+
+        Args:
+            image: Image to draw.
+            center_x: X coordinate to center the image on.
+            y: Y coordinate of the image's top edge.
+        """
         x = center_x - image.shape[1] // 2
         FrameBuffer.draw_blended_tile(
             self._fb.get_array(),
@@ -264,6 +300,12 @@ class MainMenu:
         first_button_y: int,
         buttons_height: int,
     ) -> None:
+        """Draw the mascots and leaderboard panel flanking the buttons.
+
+        Args:
+            first_button_y: Y coordinate of the first menu button.
+            buttons_height: Total height of the button column.
+        """
         layout = self._get_menu_layout()
         character_y = first_button_y + (
             buttons_height - self._side_character_height
@@ -290,6 +332,12 @@ class MainMenu:
         )
 
     def _get_menu_layout(self) -> dict[str, int]:
+        """Compute the x positions of the mascots, buttons and leaderboard.
+
+        Returns:
+            A mapping with "nata_x", "button_center_x", "leaderboard_x"
+            and "seba_x" keys.
+        """
         gap = max(12, int(
             self._mlx_ctx.win_width * _SIDE_CHARACTER_GAP_SCALE
         ))
@@ -314,6 +362,7 @@ class MainMenu:
         }
 
     def _update_leaderboard_image(self) -> None:
+        """Redraw the leaderboard panel if the top scores have changed."""
         entries = tuple(
             (record.name, record.score)
             for record in self._scores.get_leaderboard().root[
@@ -361,6 +410,16 @@ class MainMenu:
         align_right: bool = False,
         color: tuple[int, int, int] = _WHITE,
     ) -> None:
+        """Draw one line of leaderboard text onto the leaderboard panel.
+
+        Args:
+            text: Text to render.
+            x_scale: X position as a fraction of the leaderboard width.
+            y: Y coordinate to draw the text at.
+            align_right: If True, x_scale marks the text's right edge
+                instead of its left edge.
+            color: RGB color to tint the text.
+        """
         image = self._highscores_text.put_text_to_image(text)
         image[:, :, :3] = color
         x = int(self._top_highscores_width * x_scale)
@@ -369,6 +428,13 @@ class MainMenu:
         FrameBuffer.draw_blended_tile(self._leaderboard_image, image, x, y)
 
     def _calculate_asset_sizes(self) -> tuple[int, int, int, int, int, int]:
+        """Compute the title/button sizes that fit the current window.
+
+        Returns:
+            A (title_width, title_height, button_width, button_height,
+            selected_button_width, selected_button_height) tuple, scaled
+            down further if the full menu would not fit vertically.
+        """
         window_width = self._mlx_ctx.win_width
         window_height = self._mlx_ctx.win_height
 
@@ -409,6 +475,11 @@ class MainMenu:
         )
 
     def _calculate_side_character_size(self) -> tuple[int, int]:
+        """Compute the mascot sprite size that fits beside the buttons.
+
+        Returns:
+            A (width, height) pair sized to the button column's height.
+        """
         height = max(1, int(
             self._get_buttons_height() * _SIDE_CHARACTER_HEIGHT_SCALE
         ))
@@ -417,6 +488,7 @@ class MainMenu:
         return width, height
 
     def _get_buttons_height(self) -> int:
+        """Return the total height in pixels of the button column."""
         return (
             len(self._actions) * self._button_height
             + (len(self._actions) - 1) * _BUTTON_GAP
