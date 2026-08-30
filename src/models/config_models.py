@@ -3,8 +3,12 @@ from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Dict
 
 
-_DEFAULT_WIDTH = 10
-_DEFAULT_HEIGHT = 10
+_DEFAULT_WIDTH = 15
+_DEFAULT_HEIGHT = 15
+_MIN_WIDTH = 15
+_MIN_HEIGHT = 15
+_MAX_WIDTH = 50
+_MAX_HEIGHT = 50
 
 _DEFAULT_HIGHSCORE_FILENAME = "highscores.json"
 _DEFAULT_LIVES = 3
@@ -45,9 +49,15 @@ class LevelModel(BaseModel):
             value unchanged if it is an int in (8, 50], otherwise
             _DEFAULT_WIDTH.
         """
-        if not isinstance(value, int) or value <= 8 or value > 50:
-            print("Error: Invalid width - " +
-                  f"clamped to safe default {_DEFAULT_WIDTH}")
+        if (
+            not isinstance(value, int)
+            or value < _MIN_WIDTH
+            or value > _MAX_WIDTH
+        ):
+            print(
+                "Error: Invalid width - "
+                f"clamped to safe default {_DEFAULT_WIDTH}"
+            )
             return _DEFAULT_WIDTH
         return value
 
@@ -62,9 +72,15 @@ class LevelModel(BaseModel):
             value unchanged if it is an int in (8, 50], otherwise
             _DEFAULT_HEIGHT.
         """
-        if not isinstance(value, int) or value <= 8 or value > 50:
-            print("Error: Invalid height - " +
-                  f"clamped to safe default {_DEFAULT_HEIGHT}")
+        if (
+            not isinstance(value, int)
+            or value < _MIN_HEIGHT
+            or value > _MAX_HEIGHT
+        ):
+            print(
+                "Error: Invalid height - "
+                f"clamped to safe default {_DEFAULT_HEIGHT}"
+            )
             return _DEFAULT_HEIGHT
         return value
 
@@ -116,9 +132,30 @@ class LevelModel(BaseModel):
 
         return self
 
+    @field_validator("pacgum", mode="before")
+    def set_pacgum_type_if_invalid(cls, value: object) -> int:
+        """Validate pacgum type and replace invalid
+            values with a safe default."""
+        if not isinstance(value, int):
+            print(
+                "Error: Invalid pacgum - "
+                f"clamped to safe default {_DEFAULT_PACGUM}"
+            )
+            return _DEFAULT_PACGUM
+        return value
+
 
 _DEFAULT_LEVELS = [
-    LevelModel(width=10 + i * 5, height=10 + i * 5) for i in range(10)
+    LevelModel(width=15, height=15),
+    LevelModel(width=18, height=18),
+    LevelModel(width=20, height=20),
+    LevelModel(width=22, height=22),
+    LevelModel(width=25, height=25),
+    LevelModel(width=28, height=25),
+    LevelModel(width=30, height=25),
+    LevelModel(width=32, height=28),
+    LevelModel(width=35, height=30),
+    LevelModel(width=38, height=32),
 ]
 
 
@@ -259,7 +296,11 @@ class Config(BaseModel):
             _DEFAULT_LEVELS.
         """
         if not isinstance(value, list) or not value:
-            print("Error: Invalid levels - " +
-                  "clamped to safe default for levels")
+            print("Error: Invalid levels - clamped to safe default for levels")
             return _DEFAULT_LEVELS
+
+        if len(value) < 10:
+            print("Error: Fewer than 10 levels - extending with safe defaults")
+            return value + _DEFAULT_LEVELS[len(value):]
+
         return value

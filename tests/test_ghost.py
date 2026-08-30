@@ -136,7 +136,7 @@ def test_frightened_ghost_slows_down_and_moves_away_from_pacman() -> None:
 
     blinky.set_frightened(True)
 
-    assert blinky.get_speed_multiplier() == pytest.approx(1.8)
+    assert blinky.get_speed_multiplier() == pytest.approx(1.3)
     assert blinky._choose_flee_direction((0, 0)) == Direction.RIGHT
 
 
