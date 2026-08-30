@@ -21,7 +21,7 @@ import random
 import sys
 from typing import List, Tuple
 
-from mazegenerator import MazeGenerator  # type: ignore[import-untyped]
+from mazegenerator import MazeGenerator
 
 from maze_analyzer import (
     DEFAULT_MAX_DEAD_ENDS,

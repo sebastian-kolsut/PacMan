@@ -451,9 +451,11 @@ def _xy(cell: Cell) -> str:
 def _exit(report: MazeReport) -> str:
     if report.maze.exit is None:
         return "?"
-    state = {True: " (reachable)", False: " (UNREACHABLE)"}.get(
-        report.exit_reachable, ""
-    )
+    if report.exit_reachable is None:
+        state = ""
+    else:
+        state = {True: " (reachable)",
+                 False: " (UNREACHABLE)"}[report.exit_reachable]
     return f"{_xy(report.maze.exit)}{state}"
 
 

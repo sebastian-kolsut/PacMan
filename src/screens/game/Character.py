@@ -11,8 +11,18 @@ import numpy as np
 
 
 class Character(ABC):
+    """Shared grid-based movement and collision logic for Pac-Man and
+    ghosts."""
+
     def __init__(self, cell_size: int, mlx_ctx: MlxContext,
                  maze: Maze) -> None:
+        """Initialize the character's sprite buffer and movement state.
+
+        Args:
+            cell_size: Size in pixels of one maze cell.
+            mlx_ctx: Window/rendering context used for the sprite buffer.
+            maze: Maze the character moves through.
+        """
         self._cell_size = cell_size
         self._character_size = int(self._cell_size * 0.65)
         self._offset = int(cell_size * 0.2)
@@ -27,12 +37,20 @@ class Character(ABC):
 
     @abstractmethod
     def render(self) -> NDArray[np.uint8]:
+        """Render and return the character's current sprite frame."""
         ...
 
     def get_img_ptr(self) -> int:
-        return self._fb.img_ptr
+        """Return the MLX image pointer backing this character's sprite."""
+        return int(self._fb.img_ptr)
 
-    def _try_turn(self, delta_time: float):
+    def _try_turn(self, delta_time: float) -> None:
+        """Snap toward the pending direction's axis if close enough to it.
+
+        Args:
+            delta_time: Seconds elapsed since the last update, used to
+                size the snapping tolerance.
+        """
         is_vertical = self._pending_direction in (Direction.UP, Direction.DOWN)
         was_vertical = self._direction in (Direction.UP, Direction.DOWN)
 
@@ -63,7 +81,20 @@ class Character(ABC):
 
         self._direction = self._pending_direction
 
-    def _check_for_wall(self, next_x, next_y, direction) -> bool:
+    def _check_for_wall(self, next_x: float, next_y: float,
+                        direction: Direction) -> bool:
+        """Return whether moving to (next_x, next_y) would hit a wall.
+
+        Args:
+            next_x: Candidate x position in pixels.
+            next_y: Candidate y position in pixels.
+            direction: Direction of movement, checked against the maze
+                bounds and the current cell's wall on that side.
+
+        Returns:
+            True if the target cell is outside the maze or blocked by a
+            wall in direction, False otherwise.
+        """
         if self._direction in (Direction.UP, Direction.LEFT):
             cell_x = int(np.ceil(next_x / self._cell_size))
             cell_y = int(np.ceil(next_y / self._cell_size))
@@ -83,7 +114,16 @@ class Character(ABC):
 
         return self._maze.is_wall_direction(cell_idx, direction)
 
-    def _get_cell_idx(self, x: int, y: int) -> int:
+    def _get_cell_idx(self, x: float, y: float) -> int:
+        """Return the maze cell index containing pixel position (x, y).
+
+        Args:
+            x: X position in pixels.
+            y: Y position in pixels.
+
+        Returns:
+            The cell index (y * width + x), clamped to the maze bounds.
+        """
         if self._direction in (Direction.UP, Direction.LEFT):
             cell_x = int(np.ceil(x / self._cell_size))
             cell_y = int(np.ceil(y / self._cell_size))
@@ -96,7 +136,16 @@ class Character(ABC):
 
         return cell_y * self._maze.width + cell_x
 
-    def _get_next_step_xy(self, delta_time: float):
+    def _get_next_step_xy(self, delta_time: float) -> Tuple[float, float]:
+        """Return the position reached by moving one step in self._direction.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+
+        Returns:
+            The (x, y) pixel position after moving at self._speed for
+            delta_time seconds.
+        """
         if self._direction == Direction.UP:
             return self._pos_x, self._pos_y - (self._speed * delta_time)
         elif self._direction == Direction.DOWN:
@@ -108,6 +157,15 @@ class Character(ABC):
 
     def _load_assets(self, pac_size: int,
                      folder_path: str) -> List[NDArray[np.uint8]]:
+        """Load every image in folder_path as an animation frame list.
+
+        Args:
+            pac_size: Width and height in pixels to resize each frame to.
+            folder_path: Directory containing the animation frame images.
+
+        Returns:
+            The loaded frames, in the order returned by the filesystem.
+        """
         gen = walk(folder_path)
         files = [file for *_, file in gen]
         imgs: List[NDArray[np.uint8]] = []
@@ -118,6 +176,11 @@ class Character(ABC):
         return imgs
 
     def _get_current_cell(self) -> Tuple[int, int]:
+        """Return the maze cell the character is currently occupying.
+
+        Returns:
+            The (x, y) cell coordinates, clamped to the maze bounds.
+        """
 
         cell_x = int(round(self._pos_x / self._cell_size))
         cell_y = int(round(self._pos_y / self._cell_size))
@@ -128,6 +191,7 @@ class Character(ABC):
         return cell_x, cell_y
 
     def _snap_to_cell(self) -> None:
+        """Round the character's pixel position to the nearest cell center."""
 
         self._pos_x = float(
             round(self._pos_x / self._cell_size) * self._cell_size
@@ -137,6 +201,16 @@ class Character(ABC):
         )
 
     def _is_close_to_cell_center(self, delta_time: float) -> bool:
+        """Return whether the character is near a cell's center on both axes.
+
+        Args:
+            delta_time: Seconds elapsed since the last update, used to
+                size the closeness tolerance.
+
+        Returns:
+            True if both the x and y position are within tolerance of a
+            cell boundary, False otherwise.
+        """
         tolerance = max(0.5, self._speed * delta_time * 0.5)
 
         x_remainder = self._pos_x % self._cell_size

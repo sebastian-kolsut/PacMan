@@ -27,6 +27,12 @@ _FRIGHTENED_SPEED_MULTIPLIER = 1.3
 
 
 class Ghost(Character):
+    """Base ghost behavior: movement, frightened/eaten state and rendering.
+
+    Subclasses (Blinky, Pinky, Inky, Clyde) each override
+    _choose_direction (and usually _should_recalculate_direction) to
+    implement their own chase behavior.
+    """
 
     def __init__(
         self,
@@ -37,6 +43,17 @@ class Ghost(Character):
         start_cell: Tuple[int, int],
         speed_multiplier: float = _DEFAULT_SPEED_MULTIPLIER,
     ) -> None:
+        """Spawn the ghost at start_cell and load its sprites.
+
+        Args:
+            cell_size: Size in pixels of one maze cell.
+            mlx_ctx: Window/rendering context used for the sprite buffer.
+            maze: Maze the ghost moves through.
+            asset_name: Key into _GHOST_ASSETS selecting this ghost's
+                normal-mode sprite.
+            start_cell: (x, y) cell to spawn in and respawn to.
+            speed_multiplier: Normal-mode speed, in cells per second.
+        """
         super().__init__(cell_size, mlx_ctx, maze)
         self._pathfinder = Pathfinder(maze)
 
@@ -73,6 +90,14 @@ class Ghost(Character):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> None:
+        """Advance the ghost's state and movement for one frame.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+            pacman_cell: Pac-Man's current (x, y) cell, used to chase or
+                flee from.
+            pacman_direction: Pac-Man's current facing direction.
+        """
         if self._state.is_eaten:
             if self._state.update(delta_time):
                 self.set_speed_multiplier(self._normal_speed_multiplier)
@@ -123,9 +148,21 @@ class Ghost(Character):
         self._pos_y = next_y
 
     def _should_recalculate_direction(self) -> bool:
+        """Return whether to re-evaluate direction at every cell center.
+
+        Overridden by subclasses; the base ghost only reconsiders its
+        direction when it hits a wall or a dead end.
+        """
         return False
 
     def render(self) -> NDArray:
+        """Render and return the ghost's current sprite frame.
+
+        Returns:
+            A blank (fully transparent) image while eaten, the blue
+            frightened sprite (blinking near the end of frightened mode),
+            or the ghost's normal sprite otherwise.
+        """
         pixels = self._fb.get_array()
         pixels[:, :] = [0, 0, 0, 0]
 
@@ -148,6 +185,7 @@ class Ghost(Character):
         return pixels
 
     def get_draw_position(self) -> Tuple[int, int]:
+        """Return the (y, x) pixel position to draw the ghost's sprite at."""
         return (
             int(self._pos_y) + self._offset,
             int(self._pos_x) + self._offset,
@@ -158,6 +196,18 @@ class Ghost(Character):
         pacman_cell: Tuple[int, int],
         pacman_direction: Direction,
     ) -> Direction:
+        """Pick the next movement direction while chasing (default: random).
+
+        Overridden by every subclass to implement its own chase strategy.
+
+        Args:
+            pacman_cell: Pac-Man's current (x, y) cell.
+            pacman_direction: Pac-Man's current facing direction.
+
+        Returns:
+            A valid direction to move in, or the current direction if
+            none are available.
+        """
         valid_directions = self._get_valid_directions()
 
         if valid_directions:
@@ -166,6 +216,16 @@ class Ghost(Character):
         return self._direction
 
     def _choose_bfs_direction(self, target_cell: Tuple[int, int]) -> Direction:
+        """Return the first step direction of the shortest path to a cell.
+
+        Args:
+            target_cell: (x, y) cell to path toward.
+
+        Returns:
+            The direction toward target_cell, falling back to the current
+            direction (if still valid) or a random valid direction when
+            no path exists.
+        """
         start_cell = self._get_current_cell()
         direction = self._pathfinder.next_direction(start_cell, target_cell)
 
@@ -180,17 +240,28 @@ class Ghost(Character):
         return direction
 
     def _get_valid_directions(self) -> List[Direction]:
+        """Return the directions the ghost can currently move in."""
         return self._pathfinder.get_valid_directions(
             self._get_current_cell(),
         )
 
     def _get_random_valid_direction(self) -> Direction:
+        """Return a random direction the ghost can currently move in.
+
+        Returns:
+            A random valid direction, or Direction.RIGHT if none exist.
+        """
         valid_directions = self._get_valid_directions()
         if valid_directions:
             return choice(valid_directions)
         return Direction.RIGHT
 
     def set_speed_multiplier(self, speed_multiplier: float) -> None:
+        """Set the ghost's movement speed, clamped to a safe range.
+
+        Args:
+            speed_multiplier: Desired speed, in cells per second.
+        """
         speed_multiplier = max(
             _MIN_SPEED_MULTIPLIER,
             min(speed_multiplier, _MAX_SPEED_MULTIPLIER),
@@ -198,9 +269,16 @@ class Ghost(Character):
         self._speed = self._cell_size * speed_multiplier
 
     def get_speed_multiplier(self) -> float:
+        """Return the ghost's current speed, in cells per second."""
         return self._speed / self._cell_size
 
     def _get_random_reachable_cell(self) -> Tuple[int, int]:
+        """Return a random cell reachable from the ghost's current cell.
+
+        Returns:
+            A random reachable cell other than the current one, or the
+            current cell if it has no other reachable cells.
+        """
         current_cell = self._get_current_cell()
         reachable_cells = self._pathfinder.get_reachable_cells(current_cell)
 
@@ -216,6 +294,13 @@ class Ghost(Character):
         return choice(reachable_cells)
 
     def set_frightened(self, is_frightened: bool) -> None:
+        """Enter or leave frightened mode and adjust speed accordingly.
+
+        Args:
+            is_frightened: True to make the ghost edible and slow it
+                down, False to return it to normal speed. Ignored while
+                the ghost is eaten.
+        """
         if self._state.is_eaten:
             return
 
@@ -227,12 +312,23 @@ class Ghost(Character):
             self.set_speed_multiplier(self._normal_speed_multiplier)
 
     def is_frightened(self) -> bool:
+        """Return whether the ghost is currently edible by Pac-Man."""
         return self._state.is_frightened
 
     def _choose_flee_direction(
         self,
         pacman_cell: Tuple[int, int],
     ) -> Direction:
+        """Pick a direction that moves the ghost away from Pac-Man.
+
+        Args:
+            pacman_cell: Pac-Man's current (x, y) cell to flee from.
+
+        Returns:
+            The direction toward the reachable cell farthest from
+            pacman_cell, or a valid direction chosen at random if no
+            other reachable cell exists.
+        """
         current_cell = self._get_current_cell()
         reachable_cells = self._pathfinder.get_reachable_cells(current_cell)
 
@@ -261,11 +357,19 @@ class Ghost(Character):
         return self._choose_bfs_direction(target_cell)
 
     def eat(self) -> None:
+        """Mark the ghost as eaten and reset its speed to normal."""
         self._state.eat()
         self.set_speed_multiplier(self._normal_speed_multiplier)
 
     def is_eaten(self) -> bool:
+        """Return whether the ghost has been eaten and is respawning."""
         return self._state.is_eaten
 
     def set_blinking(self, is_blinking: bool) -> None:
+        """Start or stop the frightened-mode blinking warning.
+
+        Args:
+            is_blinking: True to start alternating the sprite, False to
+                stop.
+        """
         self._state.set_blinking(is_blinking)

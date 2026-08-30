@@ -3,12 +3,12 @@ from src.models.dataclasses import ProgramState, Screen, GameState
 from src.screens.game import (
     RenderMaze, Maze, PacMan, Pacgums, PauseScreen, LevelScreen,
 )
-from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky
+from src.screens.game.ghosts import Blinky, Clyde, Pinky, Inky, Ghost
 from src.screens.game.HUD import HUD
 from src.screens.draw_utils import FrameBuffer
 from math import hypot
 
-from Xlib.display import Display  # type: ignore[import-untyped]
+from Xlib.display import Display
 import numpy as np
 
 
@@ -44,8 +44,18 @@ _SEBA_OOPS_ASSET = "assets/sebanata/SEBA_OOPS.png"
 
 
 class PlayGame:
+    """The main gameplay screen: maze, Pac-Man, ghosts, HUD and cheats."""
+
     def __init__(self, mlx_ctx: MlxContext, config: Config,
                  program_state: ProgramState) -> None:
+        """Build the maze, HUD and characters for a fresh game run.
+
+        Args:
+            mlx_ctx: Window/rendering context used by every sub-screen.
+            config: Game configuration for levels, lives and scoring.
+            program_state: Shared program state, updated with the
+                current level and screen transitions.
+        """
         self._mlx_ctx = mlx_ctx
         self._program_state = program_state
         self._config = config
@@ -75,6 +85,10 @@ class PlayGame:
         }
 
     def _regenerate_maze_assets(self) -> None:
+        """Rebuild the maze render, pacgums, Pac-Man and ghosts.
+
+        Called on startup and again every time a new level starts.
+        """
         self._program_state.level = self._maze.level
         self._hud.reset_timer(
             self._config.levels[self._maze.level].level_max_time,
@@ -159,6 +173,12 @@ class PlayGame:
         self._level_screen.show(self._maze.level + 1)
 
     def _get_pressed_direction(self) -> int:
+        """Return the keycode of the currently held movement key.
+
+        Returns:
+            The first held key found among the WASD/arrow-key set, or 0
+            if none is currently pressed.
+        """
         keymap = self._keyboard.query_keymap()
         for key in _DIRECTION_KEYS:
             keycode = self._direction_keycodes[key]
@@ -167,6 +187,16 @@ class PlayGame:
         return 0
 
     def handle_key(self, keycode: int) -> str | None:
+        """Handle one key press: cheat codes, then pause menu navigation.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            The action string returned by the pause menu (e.g. "restart"
+            or "settings"), or None if the key was a cheat code or no
+            action was triggered.
+        """
         if keycode == KEY_F1:
             self._hud.show_cheat_codes()
             self._cheat_invincible = not self._cheat_invincible
@@ -208,9 +238,19 @@ class PlayGame:
         return self._pause.update(keycode)
 
     def get_final_score(self) -> int:
+        """Return the player's final score for the win/lose screen."""
         return self._hud.get_score()
 
     def update(self, delta_time: float) -> None:
+        """Advance the entire gameplay screen by one frame.
+
+        Handles level-start overlays, level completion/advancement,
+        pausing, Pac-Man and ghost movement, ghost-edible timing,
+        collisions, and the level time limit.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+        """
 
         if self._game_over:
             self._program_state.screen = Screen.WIN_OR_LOSE
@@ -286,6 +326,7 @@ class PlayGame:
             return
 
     def render(self) -> None:
+        """Draw the maze, pacgums, Pac-Man, ghosts, HUD and overlays."""
         maze_img = self._render_maze.render()
         pac_img = self._pac_man.render()
 
@@ -293,16 +334,16 @@ class PlayGame:
         pixels[:, :] = np.array([0, 0, 0, 255])
 
         maze_x = self._render_maze.get_maze_position()
+        maze_y = self._render_maze.get_maze_position_y()
 
-        pixels[:maze_img.shape[0], maze_x:maze_x+maze_img.shape[1], :3] = \
-            maze_img[:, :, :3]
+        self._fb.draw_clipped(pixels, maze_img[:, :, :3], maze_x, maze_y)
         self._draw_side_characters(pixels, maze_x, maze_img.shape[1])
-        self._pacgums.draw_pacgums_to_image(pixels, maze_x)
-        self._pacgums.draw_super_to_image(pixels, maze_x)
+        self._pacgums.draw_pacgums_to_image(pixels, maze_x, maze_y)
+        self._pacgums.draw_super_to_image(pixels, maze_x, maze_y)
         self._fb.draw_blended_tile(
             pixels, pac_img,
             int(self._pac_man._pos_x) + self._pac_man._offset + maze_x,
-            int(self._pac_man._pos_y) + self._pac_man._offset,
+            int(self._pac_man._pos_y) + self._pac_man._offset + maze_y,
             )
 
         for ghost in self._ghosts:
@@ -313,7 +354,7 @@ class PlayGame:
                 pixels,
                 ghost_img,
                 ghost_x + maze_x,
-                ghost_y,
+                ghost_y + maze_y,
             )
 
         self._hud.render(pixels)
@@ -327,6 +368,10 @@ class PlayGame:
         self._fb.put_image_to_window()
 
     def get_image(self) -> np.ndarray:
+        """Return the last rendered gameplay frame.
+
+        Used as the dimmed background for the pause and win/lose screens.
+        """
         return self._fb.get_array()
 
     def _draw_side_characters(
@@ -335,6 +380,13 @@ class PlayGame:
         maze_x: int,
         maze_width: int,
     ) -> None:
+        """Draw the Nata/Seba mascots flanking the maze.
+
+        Args:
+            pixels: Destination pixel buffer to draw onto.
+            maze_x: X offset of the maze's left edge.
+            maze_width: Width of the maze in pixels.
+        """
         if self._oops_timer > 0:
             nata_image = self._nata_oops
             seba_image = self._seba_oops
@@ -345,16 +397,16 @@ class PlayGame:
             seba_image = self._seba_like if self._seba_like_timer > 0 \
                 else self._seba_cool
         y0 = self._mlx_ctx.win_height - self._side_character_height
-        y1 = y0 + self._side_character_height
         x0_nata = maze_x - _SIDE_CHARACTER_GAP - self._side_character_width
-        x1_nata = x0_nata + self._side_character_width
         x0_seba = maze_x + maze_width + _SIDE_CHARACTER_GAP
-        x1_seba = x0_seba + self._side_character_width
 
-        pixels[y0:y1, x0_nata:x1_nata] = nata_image.astype(np.uint8)
-        pixels[y0:y1, x0_seba:x1_seba] = seba_image.astype(np.uint8)
+        self._fb.draw_clipped(pixels, nata_image.astype(np.uint8),
+                              x0_nata, y0)
+        self._fb.draw_clipped(pixels, seba_image.astype(np.uint8),
+                              x0_seba, y0)
 
     def _replace_side_character_transparency_with_black(self) -> None:
+        """Fill every partially-transparent mascot pixel with opaque black."""
         self._nata_cool = self._blacken_transparent_pixels(self._nata_cool)
         self._nata_boo = self._blacken_transparent_pixels(self._nata_boo)
         self._nata_oops = self._blacken_transparent_pixels(self._nata_oops)
@@ -366,6 +418,15 @@ class PlayGame:
     def _blacken_transparent_pixels(
         image: np.ndarray,
     ) -> np.ndarray:
+        """Replace every non-fully-opaque pixel in image with opaque black.
+
+        Args:
+            image: Source RGBA image to process.
+
+        Returns:
+            A new image with partially/fully transparent pixels replaced
+            by opaque black.
+        """
         opaque_black_bgra = (0, 0, 0, 255)
         new_image = np.array(image)
         not_fully_opaque = new_image[:, :, 3] < 255
@@ -375,6 +436,12 @@ class PlayGame:
         return new_image
 
     def _calculate_side_character_size(self) -> tuple[int, int]:
+        """Compute the mascot sprite size that fits beside the maze.
+
+        Returns:
+            A (width, height) pair sized to fit the available space on
+            whichever side of the maze is narrower.
+        """
         maze_width = self._render_maze.fb.width
         maze_x = self._render_maze.get_maze_position()
         right_space = self._mlx_ctx.win_width - maze_x - maze_width
@@ -394,7 +461,13 @@ class PlayGame:
 
         return width, height
 
-    def _get_collided_ghost(self):
+    def _get_collided_ghost(self) -> Ghost | None:
+        """Return the first non-eaten ghost currently touching Pac-Man.
+
+        Returns:
+            The colliding Ghost, or None if Pac-Man is not touching any
+            ghost that has not already been eaten.
+        """
         pacman_x, pacman_y = self._pac_man.get_center_position()
         pacman_radius = self._pac_man.get_collision_radius()
 
@@ -416,6 +489,7 @@ class PlayGame:
         return None
 
     def _lose_life(self) -> None:
+        """Deduct a life and either end the game or respawn the characters."""
         self._lives -= 1
         self._oops_timer = _OOPS_DURATION
 
@@ -427,18 +501,25 @@ class PlayGame:
         self._respawn_delay = 1.0
 
     def _reset_characters(self) -> None:
+        """Return Pac-Man and every ghost to their starting positions."""
         self._pac_man.reset_position()
 
         for ghost in self._ghosts:
             ghost.reset_position()
 
     def _activate_ghost_edible_mode(self) -> None:
+        """Start the ghost-edible timer and make every ghost frightened."""
         self._ghost_edible_timer = _GHOST_EDIBLE_TIME
 
         for ghost in self._ghosts:
             ghost.set_frightened(True)
 
     def _update_ghost_edible_mode(self, delta_time: float) -> None:
+        """Count down the ghost-edible timer and end/blink it as needed.
+
+        Args:
+            delta_time: Seconds elapsed since the last update.
+        """
         if self._ghost_edible_timer <= 0:
             return
 

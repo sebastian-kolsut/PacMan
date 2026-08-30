@@ -34,7 +34,16 @@ MAIN_TINT = (0, 0, 0, 230)
 
 
 class PauseScreen:
+    """In-game pause overlay: Resume / Restart / Settings / Main Menu."""
+
     def __init__(self, mlx_ctx: MlxContext, game_state: ProgramState) -> None:
+        """Load the pause overlay assets and build its button layout.
+
+        Args:
+            mlx_ctx: Window/rendering context to size the overlay to.
+            game_state: Shared program state, used to switch to the main
+                menu when the player chooses to leave the game.
+        """
         self._mlx_ctx = mlx_ctx
         self._fb = FrameBuffer(mlx_ctx, mlx_ctx.win_width, mlx_ctx.win_height)
         self._img = self._fb.get_array()
@@ -104,9 +113,20 @@ class PauseScreen:
         self._is_paused = False
 
     def is_game_paused(self) -> bool:
+        """Return whether the pause overlay is currently showing."""
         return self._is_paused
 
     def update(self, keycode: int) -> str | None:
+        """Handle one key press while playing or while paused.
+
+        Args:
+            keycode: X11 keysym of the pressed key.
+
+        Returns:
+            The action string chosen by the player ("restart" or
+            "settings"), or None if no action was triggered this call
+            (includes toggling pause itself and menu navigation).
+        """
         if not self._is_paused:
             if keycode == KEY_ESCAPE:
                 self._is_paused = True
@@ -135,6 +155,11 @@ class PauseScreen:
         return None
 
     def render(self, image: NDArray[np.uint8]) -> None:
+        """Draw the dimmed background, pause sign and buttons onto image.
+
+        Args:
+            image: Destination pixel buffer to draw onto.
+        """
         self._img[:, :] = np.array(MAIN_TINT, dtype=np.uint8)
         self._fb.draw_blended_tile(self._img, self._pause_tile,
                                    self._img_pos_x, self._img_pos_y)
@@ -143,6 +168,7 @@ class PauseScreen:
         self._fb.draw_blended_tile(image, self._img, 0, 0)
 
     def _draw_buttons(self) -> None:
+        """Draw the resume/restart/settings/main menu button column."""
         first_button_y = self._img_pos_y + self._pause_tile.shape[0] + \
             _BUTTON_GAP
 
@@ -159,6 +185,15 @@ class PauseScreen:
         action: str,
         index: int,
     ) -> NDArray[np.uint8]:
+        """Return the sprite to use for one button, pulsing it if selected.
+
+        Args:
+            action: Action name identifying which button sprite to use.
+            index: Position of this button in the menu.
+
+        Returns:
+            The (possibly enlarged, pulsing) button image to draw.
+        """
         if index != self._selected_index:
             return self._buttons[action]
 
@@ -168,6 +203,13 @@ class PauseScreen:
         return self._buttons[action]
 
     def _activate_selected_action(self) -> str | None:
+        """Apply the currently selected menu action.
+
+        Returns:
+            "restart" or "settings" if the caller must handle the action,
+            None if it was fully handled here (resume, or leaving to the
+            main menu).
+        """
         action = self._actions[self._selected_index]
 
         if action == "resume":
@@ -181,5 +223,13 @@ class PauseScreen:
         self._game_state.screen = Screen.MAIN_MENU
         return None
 
-    def _get_postion_x_centered(self, text_width: int):
+    def _get_postion_x_centered(self, text_width: int) -> int:
+        """Return the x coordinate that horizontally centers a given width.
+
+        Args:
+            text_width: Width in pixels of the element to center.
+
+        Returns:
+            The x coordinate to draw the element at.
+        """
         return (self._mlx_ctx.win_width // 2) - (text_width // 2)
