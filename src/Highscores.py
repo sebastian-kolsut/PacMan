@@ -88,11 +88,11 @@ class Highscores:
         temp_name = name.replace(" ", "a")
 
         if not temp_name.isalnum():
-            raise NotAlphanumericError
+            raise NotAlphanumericError()
         if len(temp_name) > _MAX_NAME_LENGHT:
-            raise NameToLongError
+            raise NameToLongError()
         if score < 0:
-            raise NegativeScoreError
+            raise NegativeScoreError()
 
         self._highscores.root.append(HighscoreData(name=name, score=score))
         self._highscores.root.sort(key=lambda x: x.score, reverse=True)

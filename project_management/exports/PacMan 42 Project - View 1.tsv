@@ -1,0 +1,26 @@
+Title	URL	Assignees	Status	Linked pull requests	Sub-issues progress
+Music	https://github.com/sebastian-kolsut/PacMan/issues/71	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/72	
+fix ghosts and refactoring	https://github.com/sebastian-kolsut/PacMan/issues/62		Done	https://github.com/sebastian-kolsut/PacMan/pull/63	
+refactor ghost navigation and state	https://github.com/sebastian-kolsut/PacMan/pull/63	NataliDe	Done		
+Fix gameplay cleanup and highscores edge cases	https://github.com/sebastian-kolsut/PacMan/pull/60	NataliDe	Done		
+BugFixHighscores	https://github.com/sebastian-kolsut/PacMan/issues/56	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/57	
+Leaderboard	https://github.com/sebastian-kolsut/PacMan/issues/54	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/55	
+feat: redesign pause and win lose menus	https://github.com/sebastian-kolsut/PacMan/pull/53	NataliDe	Done		
+Update assets	https://github.com/sebastian-kolsut/PacMan/issues/50	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/51	
+add reactive gameplay side characters, update main menu visuals	https://github.com/sebastian-kolsut/PacMan/pull/51	NataliDe	Done		
+Implement frightened ghosts	https://github.com/sebastian-kolsut/PacMan/issues/48	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/49	
+ add super pacgum ghost frightened mode	https://github.com/sebastian-kolsut/PacMan/pull/49	NataliDe	Done		
+Integrate Colisions with HUD	https://github.com/sebastian-kolsut/PacMan/issues/43	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/44	
+Add WinScreen	https://github.com/sebastian-kolsut/PacMan/issues/45	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/47	
+Collisions between Pac-Man and Ghosts	https://github.com/sebastian-kolsut/PacMan/issues/39	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/42	
+Add Pause screen	https://github.com/sebastian-kolsut/PacMan/issues/40	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/41	
+Fix Ghost	https://github.com/sebastian-kolsut/PacMan/issues/36	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/37	
+Refactored ghost movement. Added Pinky and Inky	https://github.com/sebastian-kolsut/PacMan/pull/37	NataliDe	Done		
+Refactor ghosts into separate behavior classes	https://github.com/sebastian-kolsut/PacMan/issues/33	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/34	
+Add ghosts to gameplay	https://github.com/sebastian-kolsut/PacMan/issues/26	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/32	
+Refactor main menu input	https://github.com/sebastian-kolsut/PacMan/issues/28	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/29	
+HUD	https://github.com/sebastian-kolsut/PacMan/issues/27	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/31	
+feature/menu-extra-screen	https://github.com/sebastian-kolsut/PacMan/issues/24	NataliDe	Done	https://github.com/sebastian-kolsut/PacMan/pull/25	
+PacGums	https://github.com/sebastian-kolsut/PacMan/issues/22	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/23	
+FontModule	https://github.com/sebastian-kolsut/PacMan/issues/19	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/21	
+Add PacMan	https://github.com/sebastian-kolsut/PacMan/issues/15	sebastian-kolsut	Done	https://github.com/sebastian-kolsut/PacMan/pull/16, https://github.com/sebastian-kolsut/PacMan/pull/18	

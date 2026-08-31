@@ -6,8 +6,8 @@
   "points_per_ghost": 200,
   "seed": 42,
   "levels": [
-    { "width": 20, "height": 20, "pacgum": 1, "level_max_time": 90 },
-    { "width": 25, "height": 25, "pacgum": 1, "level_max_time": 90 },
-    { "width": 30, "height": 15, "pacgum": 1, "level_max_time": 90 }
+    { "width": 20, "height": 20, "pacgum": 42, "level_max_time": 90 },
+    { "width": 25, "height": 25, "pacgum": 42, "level_max_time": 90 },
+    { "width": 30, "height": 15, "pacgum": 42, "level_max_time": 90 }
   ]
 }
