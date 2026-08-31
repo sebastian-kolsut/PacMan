@@ -269,12 +269,6 @@ GitHub branches and pull requests were used to separate features, review changes
 
 ## Testing
 
-Run the test suite with:
-
-```bash
-uv run pytest
-```
-
 Run Python compile checks manually with:
 
 ```bash
@@ -331,7 +325,6 @@ Before submission:
 
 - [ ] `make install` works
 - [ ] `make run` starts the game
-- [ ] `uv run pytest` passes or known failures are documented
 - [ ] `make lint` passes or known issues are fixed
 - [ ] `config.json` contains at least 10 levels
 - [ ] Invalid config values do not crash the game
