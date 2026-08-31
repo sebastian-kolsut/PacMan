@@ -299,8 +299,4 @@ class Config(BaseModel):
             print("Error: Invalid levels - clamped to safe default for levels")
             return _DEFAULT_LEVELS
 
-        if len(value) < 10:
-            print("Error: Fewer than 10 levels - extending with safe defaults")
-            return value + _DEFAULT_LEVELS[len(value):]
-
         return value
